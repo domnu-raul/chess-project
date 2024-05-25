@@ -21,7 +21,11 @@ from database import schemas
 # TODO add game state to Game class
 # TODO add update_state method to Game class
 # TODO add an event loop to Game class
-# TODO maybe create a separate class for matchmaking and updating ELO rating
+# TODO implement ELO and matchmaking(maybe use a separate service for that)
+
+# TODO add ELO rating to User model, also wins/losses/draws
+# TODO create a table for game history
+# TODO handle promotions
 
 
 @dataclass
@@ -117,8 +121,7 @@ class Game:
                     self.board.push(uci_move)
                     valid = True
 
-        except chess.InvalidMoveError as e:
-            print(e.args)
+        except chess.InvalidMoveError:
             pass
 
         if (outcome := self.board.outcome()) is not None:
@@ -248,9 +251,7 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
                 await game.move(player, move)
                 move = await websocket.receive_text()
 
-        except WebSocketDisconnect:
-            pass
-        except RuntimeError:
+        except (WebSocketDisconnect, RuntimeError):
             pass
 
         print(f"{connection_id} disconnected")
