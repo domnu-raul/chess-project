@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 
 
-def get_user_from_db(username: str, db: Annotated[Session, Depends(get_db)]):
+def get_user(username: str, db: Annotated[Session, Depends(get_db)]):
     if (
         user := db.query(models.UserDB)
         .filter(models.UserDB.username == username)

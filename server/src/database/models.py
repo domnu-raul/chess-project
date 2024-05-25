@@ -2,6 +2,7 @@ from . import Base
 from sqlalchemy import Column, Integer, String
 
 
+# TODO add ELO rating
 class UserDB(Base):
     __tablename__ = "users"
 
