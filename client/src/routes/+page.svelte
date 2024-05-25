@@ -2,7 +2,7 @@
 <p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
 
 <script>
-    import ChessBoard from "../components/chessBoard.svelte";
+    import ChessGame from "../components/ChessGame/chessGame.svelte"; 
 </script>
 
-<ChessBoard></ChessBoard>
+<ChessGame></ChessGame>
