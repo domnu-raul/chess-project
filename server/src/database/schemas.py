@@ -1,3 +1,6 @@
+from datetime import date, datetime
+from typing import List, Optional
+from uuid import UUID
 from pydantic import BaseModel, Field, EmailStr
 
 
@@ -16,8 +19,51 @@ class UserCreate(UserBase):
     )
 
 
-class User(UserBase):
-    id: int
+class UserDetails(BaseModel):
+    date_of_birth: Optional[date] = None
+    elo_rating: int = 1200
+    wins: int = 0
+    losses: int = 0
+    draws: int = 0
+    games_played: int = 0
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+
+class User(UserBase):
+    id: int
+    details: UserDetails
+
+    class Config:
+        from_attributes = True
+
+
+class UserConnection(User):
+    connection_id: UUID
+
+
+class GameState(BaseModel):
+    fen: str
+    player_turn: str = "W"
+    last_move: Optional[str] = None
+    legal_moves: List[str] = []
+    winner: Optional[str] = None
+    is_end: bool = False
+
+
+class GameResponse(GameState):
+    success: bool
+
+
+class Game(BaseModel):
+    white_player: int
+    black_player: int
+    moves: List[str]
+    winner: Optional[int]
+    date: datetime = Field(default_factory=datetime.now)
+
+    class Config:
+        from_attributes = True
+        allow_population_by_field_name = True
+        use_enum_values = True

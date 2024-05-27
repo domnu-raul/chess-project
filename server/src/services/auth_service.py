@@ -9,7 +9,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 import jwt
 
-from database.crud import get_user, create_user
+from database.crud import get_user_by_username, create_user
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -34,7 +34,7 @@ def verify_password(plain_password, hashed_password):
 
 
 def authenticate_user(username: str, password: str, db: Session = Depends(get_db)):
-    user = get_user(username, db)
+    user = get_user_by_username(username, db)
     if not verify_password(password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password"
@@ -79,5 +79,6 @@ async def get_current_user(
     except jwt.PyJWTError:
         raise credentials_exception
 
-    user = get_user(username, db)
-    return schemas.UserBase(username=user.username, email=user.email)
+    user = get_user_by_username(username, db)
+
+    return schemas.User.model_validate(user)

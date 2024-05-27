@@ -1,4 +1,4 @@
-from typing import Annotated, Tuple, List, Dict
+from typing import Tuple, List, Dict
 import asyncio
 import threading
 import chess
@@ -6,96 +6,113 @@ import chess
 from dataclasses import dataclass
 from uuid import UUID, uuid4
 
+import database
 from services.auth_service import get_current_user
 from sqlalchemy.orm import Session
 
 from fastapi import WebSocket, WebSocketDisconnect
 
-from database import schemas
+from database import schemas, crud
+import bisect
 
-
-# TODO make a connection class(ws and user)
-# TODO move game logic to a Game class
 # TODO move ConnectionManager to a separate file
-# TODO optimise game state updates, make a class for game state
-# TODO add game state to Game class
-# TODO add update_state method to Game class
-# TODO add an event loop to Game class
-# TODO implement ELO and matchmaking(maybe use a separate service for that)
 
-# TODO add ELO rating to User model, also wins/losses/draws
-# TODO create a table for game history
-# TODO handle promotions
+# TODO add a leaderboard endpoint
+
+# TODO document the code, remove print() calls
 
 
 @dataclass
 class ConnectionManager:
-    active_connections: Dict[UUID, Tuple[WebSocket, schemas.User]]
-    waiting_connections: Dict[UUID, asyncio.Queue]
+    connections: Dict[UUID, Tuple[WebSocket, schemas.User]]
 
     def __init__(self):
-        self.active_connections = dict()
-        self.waiting_connections = dict()
-
-        threading.Thread(target=self.matchmaking, daemon=True).start()
+        self.connections = dict()
 
     async def connect(self, websocket: WebSocket) -> UUID:
         connection_id = uuid4()
 
         await websocket.accept()
 
-        self.active_connections[connection_id] = websocket
+        self.connections[connection_id] = websocket
         return connection_id
 
     def disconnect(self, connection_id: UUID) -> None:
-        self.active_connections.pop(connection_id)
-        self.waiting_connections.pop(connection_id)
+        self.connections.pop(connection_id)
 
-    async def find_match(self, connection_id: UUID):
+    async def send_message_to(self, connection_id: UUID, message: str):
+        await self.connections[connection_id].send_text(message)
+
+    async def send_json_to(self, connection_id: UUID, json: dict):
+        try:
+            await self.connections[connection_id].send_json(json)
+        except KeyError:
+            print(f"Connection {connection_id} not found")
+
+
+class Matchmaker:
+    waiting_queue: List[Tuple[schemas.UserConnection, asyncio.Queue]]
+    MATCHMAKING_RANGE = 100
+
+    def __init__(self):
+        self.waiting_queue = list()
+        threading.Thread(target=self.matchmaking, daemon=True).start()
+
+    def __add(self, user: schemas.UserConnection):
         queue = asyncio.Queue()
+        bisect.insort(
+            self.waiting_queue, (user, queue), key=lambda o: o[0].details.elo_rating
+        )
 
-        self.waiting_connections[connection_id] = queue
+        return queue
+
+    def matchmaking(self):
+        while True:
+            if len(self.waiting_queue) >= 2:
+                for i in range(0, len(self.waiting_queue) - 1):
+                    player_a, queue_a = self.waiting_queue[i]
+                    player_b, queue_b = self.waiting_queue[i + 1]
+                    if (
+                        abs(player_a.details.elo_rating - player_b.details.elo_rating)
+                        <= self.MATCHMAKING_RANGE
+                    ):
+                        self.waiting_queue.pop(i)
+                        self.waiting_queue.pop(i)
+
+                        game = Game()
+                        queue_a.put_nowait(game)
+                        queue_b.put_nowait(game)
+
+    async def find_game(self, user: schemas.UserConnection):
+        queue = self.__add(user)
 
         game = await queue.get()
         return game
 
-    def matchmaking(self):
-        while True:
-            if len(self.waiting_connections) >= 2:
-                _, q1 = self.waiting_connections.popitem()
-                _, q2 = self.waiting_connections.popitem()
-
-                game = Game()
-
-                q1.put_nowait(game)
-                q2.put_nowait(game)
-
-    async def send_message_to(self, connection_id: UUID, message: str):
-        await self.active_connections[connection_id].send_text(message)
-
-    async def send_json_to(self, connection_id: UUID, json: dict):
-        await self.active_connections[connection_id].send_json(json)
-
-
-@dataclass
-class Player:
-    connection_id: UUID
-    user: schemas.User
-
 
 @dataclass
 class Game:
-    black: Player
-    white: Player
     board: chess.Board
-    winner: UUID | None = None
+    black: schemas.UserConnection | None = None
+    white: schemas.UserConnection | None = None
+    game_state: schemas.GameState | None = None
+    pushed_move: Tuple[schemas.UserConnection, str] | None = None
 
     def __init__(self):
         self.board = chess.Board()
-        self.white = None
-        self.black = None
+        self.__update_state()
 
-    def join(self, player: Player):
+        def run_in_new_loop(loop, coro):
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(coro)
+            loop.close()
+
+        new_loop = asyncio.new_event_loop()
+        threading.Thread(
+            target=run_in_new_loop, args=(new_loop, self.engine()), daemon=True
+        ).start()
+
+    def join(self, player: schemas.UserConnection):
         if self.white is None:
             self.white = player
         elif self.black is None:
@@ -103,96 +120,136 @@ class Game:
         else:
             raise Exception("Game is full")
 
-        # TODO return game status message to player
+    async def engine(self):
+        while self.black is None or self.white is None:
+            await asyncio.sleep(1)
 
-    async def move(self, player: Player, move: str):
-        valid = False
+        await connectionManager.send_json_to(
+            self.white.connection_id,
+            dict(
+                self.__get_response_for_player(self.white, True).model_dump(), color="W"
+            ),
+        )
 
+        await connectionManager.send_json_to(
+            self.black.connection_id,
+            dict(
+                self.__get_response_for_player(self.black, True).model_dump(), color="B"
+            ),
+        )
+
+        while self.game_state.winner is None:
+            if (t := self.pushed_move) is not None:
+                player, move = t
+                self.board.push(chess.Move.from_uci(move))
+
+                self.__update_state(last_move=move)
+                self.pushed_move = None
+
+                response = self.__get_response_for_player(self.black, True)
+                other_player = self.white if player == self.black else self.black
+
+                await connectionManager.send_json_to(
+                    other_player.connection_id,
+                    self.__get_state_for_player(other_player).model_dump(),
+                )
+
+                await connectionManager.send_json_to(
+                    player.connection_id,
+                    response.model_dump(),
+                )
+
+
+        final_state = self.game_state.model_dump()
+
+        await connectionManager.send_json_to(self.black.connection_id, final_state)
+        await connectionManager.send_json_to(self.white.connection_id, final_state)
+
+        game_model = schemas.Game(
+            white_player=self.white.id,
+            black_player=self.black.id,
+            moves = [move.uci() for move in self.board.move_stack],
+            winner=None if self.game_state.winner is None else self.white.id if self.game_state.winner == "W" else self.black.id,
+        )
+
+        crud.create_game(game_model, next(database.get_db()))
+
+    async def push_move(self, player: schemas.UserConnection, move: str):
+        if self.__is_valid_move(move) and self.__is_player_turn(player):
+            self.pushed_move = (player, move)
+        else:
+            response = self.__get_response_for_player(player, False)
+
+            await connectionManager.send_json_to(
+                player.connection_id,
+                response.model_dump(),
+            )
+
+    def __get_response_for_player(self, player: schemas.UserConnection, success: bool):
+        response = schemas.GameResponse(
+            success=success, **self.__get_state_for_player(player).model_dump()
+        )
+
+        return response
+
+    def __get_state_for_player(self, player: schemas.UserConnection):
+        state = self.game_state.model_dump()
+        if not self.__is_player_turn(player):
+            state["legal_moves"] = []
+
+        return schemas.GameState(**state)
+
+    def __is_player_turn(self, player: schemas.UserConnection):
+        return (
+            self.board.turn == chess.WHITE
+            and player == self.white
+            or self.board.turn == chess.BLACK
+            and player == self.black
+        )
+
+    def __is_valid_move(self, move: str):
         try:
             uci_move = chess.Move.from_uci(move)
-
-            if player is self.white and self.board.turn == chess.WHITE:
-                if self.board.is_legal(uci_move):
-                    self.board.push(uci_move)
-                    valid = True
-
-            elif player is self.black and self.board.turn == chess.BLACK:
-                if self.board.is_legal(uci_move):
-                    self.board.push(uci_move)
-                    valid = True
-
+            return self.board.is_legal(uci_move)
         except chess.InvalidMoveError:
-            pass
+            return False
 
-        if (outcome := self.board.outcome()) is not None:
-            self.winner = (
-                "W"
-                if outcome.winner == chess.WHITE
-                else "B" if outcome.winner == chess.BLACK else "D"
-            )
+    def __update_state(self, last_move: str | None = None):
+        if self.game_state is None:
+            self.game_state = schemas.GameState(fen=self.board.fen())
 
         moves = [move.uci() for move in self.board.legal_moves]
-        starters = list(set(map(lambda m: m[:2], moves)))
 
-        move_tree = {
-            starter: list(
-                map(lambda m: m[2:], filter(lambda n: n[:2] == starter, moves))
+        outcome = self.board.outcome()
+        if outcome is not None:
+            self.games_state.is_end = True
+            self.game_state.winner = (
+                "W"
+                if outcome.winner == chess.WHITE
+                else "B" if outcome.winner == chess.BLACK else None
             )
-            for starter in sorted(starters)
-        }
 
-        white_move_tree = move_tree if self.board.turn == chess.WHITE else {}
-        black_move_tree = move_tree if self.board.turn == chess.BLACK else {}
-
-        output = {
-            "status": "success",
-            "fen": self.get_fen(),
-            "turn": "W" if self.board.turn == chess.WHITE else "B",
-            "winner": self.get_winner(),
-        }
-
-        if valid:
-            output["last_move"] = move
-            output["move_tree"] = white_move_tree
-            await connectionManager.send_json_to(self.white.connection_id, output)
-
-            output["move_tree"] = black_move_tree
-            await connectionManager.send_json_to(self.black.connection_id, output)
-        else:
-            output["status"] = "invalid"
-            await connectionManager.send_json_to(player.connection_id, output)
-
-    def get_fen(self):
-        return self.board.fen()
-
-    def get_winner(self):
-        return self.winner
-
-    def get_color(self, player):
-        if player == self.white:
-            return "W"
-        elif player == self.black:
-            return "B"
-        else:
-            return None
+        self.game_state.player_turn = "W" if self.board.turn == chess.WHITE else "B"
+        self.game_state.fen = self.board.fen()
+        self.game_state.last_move = last_move
+        self.game_state.legal_moves = moves
 
     async def disconnect(self, player: UUID):
-        output = {"fen": self.get_fen(), "turn": "", "winner": ""}
-
         if player == self.white:
-            self.winner = "B"
-            output["winner"] = "B"
-            await connectionManager.send_json_to(self.black.connection_id, output)
+            self.game_state.winner = "B"
         else:
-            self.winner = "W"
-            output["winner"] = "W"
-            await connectionManager.send_json_to(self.white.connection_id, output)
+            self.game_state.winner = "W"
+
+    def get_winner(self):
+        return self.game_state.winner
 
 
 async def join_game(websocket: WebSocket, token: str, db: Session):
-    user = await get_current_user(token, db)
     connection_id = await connectionManager.connect(websocket)
-    player = Player(connection_id, user)
+    user = await get_current_user(token, db)
+    user_connection = schemas.UserConnection(
+        connection_id=connection_id, **user.model_dump()
+    )
 
     connected = False
 
@@ -207,7 +264,7 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
             return result
 
     async def get_find_match() -> Tuple[None | Game, bool]:
-        return await connectionManager.find_match(connection_id), False
+        return await matchmaker.find_game(user_connection), False
 
     await websocket.send_json(
         {
@@ -233,23 +290,16 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
         return
 
     if (game := result) is not None:
-        game.join(player)
+        game.join(user_connection)
         connected = True
-
-        await websocket.send_json(
-            {
-                "status": "success",
-                "fen": game.get_fen(),
-                "color": game.get_color(player),
-            }
-        )
 
         try:
             move, _ = await pending_task
 
-            while game.get_winner() is None:
-                await game.move(player, move)
+            while game.get_winner() is None and move is not None:
+                await game.push_move(user_connection, move)
                 move = await websocket.receive_text()
+
 
         except (WebSocketDisconnect, RuntimeError):
             pass
@@ -260,3 +310,4 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
 
 
 connectionManager = ConnectionManager()
+matchmaker = Matchmaker()
