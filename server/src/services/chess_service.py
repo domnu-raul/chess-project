@@ -3,26 +3,24 @@ import asyncio
 import threading
 import chess
 
-from dataclasses import dataclass
 from uuid import UUID, uuid4
 
-import database
 from services.auth_service import get_current_user
 from sqlalchemy.orm import Session
 
 from fastapi import WebSocket, WebSocketDisconnect
 
-from database import schemas, crud
+from database import get_db, schemas, crud
 import bisect
 
 # TODO move ConnectionManager to a separate file
 
 # TODO add a leaderboard endpoint
 
-# TODO document the code, remove print() calls
+# TODO document the code
 
+# TODO new class for commiting the game to the db, and updating the user details(also elo)
 
-@dataclass
 class ConnectionManager:
     connections: Dict[UUID, Tuple[WebSocket, schemas.User]]
 
@@ -90,7 +88,6 @@ class Matchmaker:
         return game
 
 
-@dataclass
 class Game:
     board: chess.Board
     black: schemas.UserConnection | None = None
@@ -98,9 +95,11 @@ class Game:
     game_state: schemas.GameState | None = None
     pushed_move: Tuple[schemas.UserConnection, str] | None = None
 
+
     def __init__(self):
         self.board = chess.Board()
         self.__update_state()
+
 
         def run_in_new_loop(loop, coro):
             asyncio.set_event_loop(loop)
@@ -172,7 +171,9 @@ class Game:
             winner=None if self.game_state.winner is None else self.white.id if self.game_state.winner == "W" else self.black.id,
         )
 
-        crud.create_game(game_model, next(database.get_db()))
+        if _db_object is not None:
+            game_object = crud.create_game(game_model, _db_object)
+            print(f"{game_object} created")
 
     async def push_move(self, player: schemas.UserConnection, move: str):
         if self.__is_valid_move(move) and self.__is_player_turn(player):
@@ -311,3 +312,4 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
 
 connectionManager = ConnectionManager()
 matchmaker = Matchmaker()
+_db_object = next(get_db())

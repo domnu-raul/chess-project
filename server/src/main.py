@@ -19,3 +19,5 @@ async def __play__(
     db: Session = Depends(get_db),
 ):
     return await chess_service.join_game(websocket, token, db)
+
+
