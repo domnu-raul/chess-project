@@ -10,7 +10,6 @@ init_db()
 
 app.include_router(auth.router)
 
-
 @app.websocket("/play")
 async def __play__(
     websocket: WebSocket,

@@ -50,7 +50,6 @@ class GameState(BaseModel):
     last_move: Optional[str] = None
     legal_moves: List[str] = []
     winner: Optional[str] = None
-    is_end: bool = False
 
 
 class GameResponse(GameState):
