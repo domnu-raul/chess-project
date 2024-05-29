@@ -14,10 +14,10 @@ from src.utils import connection_manager, matchmaker
 
 # TODO document the code
 
-async def __check_connection_task(connected : bool, websocket : WebSocket) -> Tuple[None | str, bool]:
+async def __check_connection_task(connected : List[bool], websocket : WebSocket) -> Tuple[None | str, bool]:
     result = (None, False)
     try:
-        while not connected:
+        while not connected[0]:
             result = (await websocket.receive_text(), False)
     except WebSocketDisconnect:
         result = (None, True)
@@ -34,7 +34,7 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
         connection_id=connection_id, **user.model_dump()
     )
 
-    connected = False
+    connected = [False]
 
     await websocket.send_json(
         {
@@ -61,7 +61,7 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
 
     if type(game := result) is Game:
         game.join(user_connection)
-        connected = True
+        connected[0] = [True]
 
         try:
             move, _ = await pending_task

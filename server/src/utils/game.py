@@ -52,6 +52,8 @@ class Game:
         while self.black is None or self.white is None:
             await asyncio.sleep(1)
 
+        self.__update_state()
+
         await connection_manager.send_json_to(
             self.white.connection_id,
             dict(
