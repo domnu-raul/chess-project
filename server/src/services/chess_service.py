@@ -43,8 +43,8 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
         }
     )
 
-    task1 = __check_connection_task(connected, websocket)
-    task2 = __find_match_task(user_connection)
+    task1 = asyncio.create_task(__check_connection_task(connected, websocket))
+    task2 = asyncio.create_task(__find_match_task(user_connection))
 
     done, pending = await asyncio.wait(
         [task1, task2], return_when=asyncio.FIRST_COMPLETED
