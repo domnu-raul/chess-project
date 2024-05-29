@@ -1,5 +1,5 @@
-from typing import List, Tuple
 import asyncio, threading, bisect
+from typing import List, Tuple
 
 from src.database import schemas
 from src.utils.game import Game

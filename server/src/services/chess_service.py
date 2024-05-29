@@ -1,10 +1,7 @@
 import asyncio
-import bisect
-import threading
 from typing import Dict, List, Tuple, Optional
 from uuid import UUID, uuid4
 
-import chess
 from fastapi import WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 

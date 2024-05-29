@@ -1,11 +1,9 @@
+import chess, asyncio, threading
 from typing import Optional, Tuple
 from src.database import schemas
-import chess
-import asyncio
-import threading
-from src.database import crud
-
 from sqlalchemy.orm import Session
+
+from src.database import crud
 from src.database import get_db
 from src.utils import connection_manager
 

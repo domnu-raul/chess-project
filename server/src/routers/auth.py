@@ -16,7 +16,6 @@ async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db),
 ):
-    print("called")
     user = auth_service.authenticate_user(
         form_data.username, form_data.password, db)
 
@@ -33,7 +32,6 @@ async def register_account(
     user_data: Annotated[schemas.UserCreate, Body()],
     db: Session = Depends(get_db),
 ) -> schemas.User:
-    print("called")
     return auth_service.register_user(user_data, db)
 
 

@@ -1,9 +1,8 @@
 import asyncio
-import bisect
-import threading
 from typing import Dict, List, Tuple, Optional
 from uuid import UUID, uuid4
 from fastapi import WebSocket, WebSocketDisconnect
+
 from src.database import crud, get_db, schemas
 
 connections: Dict[UUID, WebSocket] = dict[UUID, WebSocket]()
