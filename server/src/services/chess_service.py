@@ -13,11 +13,22 @@ from src.services.auth_service import get_current_user
 from src.utils.game import Game
 from src.utils import connection_manager, matchmaker
 
-# TODO move ConnectionManager to a separate file
-
 # TODO add a leaderboard endpoint
 
 # TODO document the code
+
+async def __check_connection_task(connected : bool, websocket : WebSocket) -> Tuple[None | str, bool]:
+    result = (None, False)
+    try:
+        while not connected:
+            result = (await websocket.receive_text(), False)
+    except WebSocketDisconnect:
+        result = (None, True)
+    finally:
+        return result
+
+async def __find_match_task(user_connection : schemas.UserConnection) -> Tuple[None | Game, bool]:
+    return await matchmaker.find_game(user_connection), False
 
 async def join_game(websocket: WebSocket, token: str, db: Session):
     connection_id = await connection_manager.connect(websocket)
@@ -28,19 +39,6 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
 
     connected = False
 
-    async def check_connection_task() -> Tuple[None | str, bool]:
-        result = (None, False)
-        try:
-            while not connected:
-                result = (await websocket.receive_text(), False)
-        except WebSocketDisconnect:
-            result = (None, True)
-        finally:
-            return result
-
-    async def find_match_task() -> Tuple[None | Game, bool]:
-        return await matchmaker.find_game(user_connection), False
-
     await websocket.send_json(
         {
             "status": "waiting",
@@ -48,8 +46,8 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
         }
     )
 
-    task1 = check_connection_task()
-    task2 = find_match_task()
+    task1 = __check_connection_task(connected, websocket)
+    task2 = __find_match_task(user_connection)
 
     done, pending = await asyncio.wait(
         [task1, task2], return_when=asyncio.FIRST_COMPLETED
@@ -71,7 +69,7 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
         try:
             move, _ = await pending_task
 
-            while game.get_winner() is None and move is not None:
+            while game.winner is None and move is not None:
                 await game.push_move(user_connection, move)
                 move = await websocket.receive_text()
         except (WebSocketDisconnect, RuntimeError) as e:

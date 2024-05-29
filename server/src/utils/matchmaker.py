@@ -31,7 +31,6 @@ def __matchmaking():
                     __waiting_queue.pop(i)
 
                     game = Game()
-                    print("sex")
                     queue_a.put_nowait(game)
                     queue_b.put_nowait(game)
 

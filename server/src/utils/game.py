@@ -18,6 +18,10 @@ class Game:
     game_state: Optional[schemas.GameState] = None
     pushed_move: Optional[Tuple[schemas.UserConnection, str]] = None
 
+    @property
+    def winner(self):
+        return self.game_state.winner
+
     def __init__(self):
         self.board = chess.Board()
         self.game_state = schemas.GameState(fen=self.board.fen())
@@ -40,52 +44,11 @@ class Game:
         else:
             raise Exception("Game is full")
 
-    def __end_game(self):
-        self.__update_player_data()
-
-        game_model = schemas.Game(
-            white_player_id=self.white.id,
-            black_player_id=self.black.id,
-            white_player=self.white,
-            black_player=self.black,
-            moves=[move.uci() for move in self.board.move_stack],
-            winner=None if self.game_state.winner is None else self.white.id if self.game_state.winner == "W" else self.black.id,)
-
-        if _db_object is not None:
-            game_object = crud.create_game(
-                game_model, _db_object)
-
-    def __update_player_data(self):
-        def expected_score(a, b): return 1 / (1 + 10 ** ((b - a) / 400))
-
-        outcome_w = 1 if self.game_state.winner == "W" \
-            else 0.5 if self.game_state.winner is None \
-            else 0
-
-        outcome_b = 1 - outcome_w
-
-        expected_w = expected_score(
-            self.white.details.elo_rating, self.black.details.elo_rating)
-        expected_b = expected_score(
-            self.black.details.elo_rating, self.white.details.elo_rating)
-
-        new_rating_w = self.white.details.elo_rating + \
-            32 * (outcome_w - expected_w)
-        new_rating_b = self.black.details.elo_rating + \
-            32 * (outcome_b - expected_b)
-
-        self.white.details.elo_rating = round(new_rating_w)
-        self.black.details.elo_rating = round(new_rating_b)
-
-        if self.game_state.winner is None:
-            self.white.details.draws += 1
-            self.black.details.draws += 1
-        elif self.game_state.winner == "W":
-            self.white.details.wins += 1
-            self.black.details.losses += 1
+    async def disconnect(self, player: schemas.UserConnection):
+        if player is self.white:
+            self.game_state.winner = "B"
         else:
-            self.white.details.losses += 1
-            self.black.details.wins += 1
+            self.game_state.winner = "W"
 
     async def engine(self):
         while self.black is None or self.white is None:
@@ -105,7 +68,7 @@ class Game:
             ),
         )
 
-        while self.game_state.winner is None:
+        while self.winner is None:
             if (t := self.pushed_move) is not None:
                 player, move = t
                 self.board.push(chess.Move.from_uci(move))
@@ -189,11 +152,49 @@ class Game:
         self.game_state.last_move = last_move
         self.game_state.legal_moves = moves
 
-    async def disconnect(self, player: schemas.UserConnection):
-        if player is self.white:
-            self.game_state.winner = "B"
-        else:
-            self.game_state.winner = "W"
+    def __end_game(self):
+        self.__update_player_data()
 
-    def get_winner(self):
-        return self.game_state.winner
+        game_model = schemas.Game(
+            white_player_id=self.white.id,
+            black_player_id=self.black.id,
+            white_player=self.white,
+            black_player=self.black,
+            moves=[move.uci() for move in self.board.move_stack],
+            winner=None if self.winner is None else self.white.id if self.winner == "W" else self.black.id,)
+
+        if _db_object is not None:
+            game_object = crud.create_game(
+                game_model, _db_object)
+
+    def __update_player_data(self):
+        def expected_score(a, b): return 1 / (1 + 10 ** ((b - a) / 400))
+
+        outcome_w = 1 if self.winner == "W" \
+            else 0.5 if self.winner is None \
+            else 0
+
+        outcome_b = 1 - outcome_w
+
+        expected_w = expected_score(
+            self.white.details.elo_rating, self.black.details.elo_rating)
+        expected_b = expected_score(
+            self.black.details.elo_rating, self.white.details.elo_rating)
+
+        new_rating_w = self.white.details.elo_rating + \
+            32 * (outcome_w - expected_w)
+        new_rating_b = self.black.details.elo_rating + \
+            32 * (outcome_b - expected_b)
+
+        self.white.details.elo_rating = round(new_rating_w)
+        self.black.details.elo_rating = round(new_rating_b)
+
+        if self.winner is None:
+            self.white.details.draws += 1
+            self.black.details.draws += 1
+        elif self.winner == "W":
+            self.white.details.wins += 1
+            self.black.details.losses += 1
+        else:
+            self.white.details.losses += 1
+            self.black.details.wins += 1
