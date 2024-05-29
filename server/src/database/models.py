@@ -1,8 +1,9 @@
-from . import Base
 from sqlalchemy import CheckConstraint, String, ForeignKey, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship, column_property
 from typing import List, Optional
 from datetime import date, datetime
+
+from src.database import Base
 
 
 class User(Base):
@@ -37,14 +38,13 @@ class Game(Base):
     __tablename__ = "game_logs"
 
     game_id: Mapped[int] = mapped_column(primary_key=True)
-    white_player: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    black_player: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    white_player_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    black_player_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     moves: Mapped[List[str]] = mapped_column(ARRAY(String(5)))
     winner: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"))
     date: Mapped[datetime] = mapped_column(default=datetime.now)
 
-    __table_args__ = (
-        CheckConstraint(
-            "winner = white_player OR winner = black_player OR winner IS NULL"
-        ),
-    )
+    white_player: Mapped["User"] = relationship(
+        "User", foreign_keys=[white_player_id])
+    black_player: Mapped["User"] = relationship(
+        "User", foreign_keys=[white_player_id])

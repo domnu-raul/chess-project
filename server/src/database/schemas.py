@@ -25,6 +25,7 @@ class UserDetails(BaseModel):
     wins: int = 0
     losses: int = 0
     draws: int = 0
+
     games_played: int = 0
 
     class Config:
@@ -57,13 +58,16 @@ class GameResponse(GameState):
 
 
 class Game(BaseModel):
-    white_player: int
-    black_player: int
+    white_player_id: int
+    black_player_id: int
     moves: List[str]
     winner: Optional[int]
     date: datetime = Field(default_factory=datetime.now)
 
+    white_player: User
+    black_player: User
+
     class Config:
         from_attributes = True
-        allow_population_by_field_name = True
+        populate_by_name = True
         use_enum_values = True

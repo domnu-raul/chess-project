@@ -1,12 +1,12 @@
 from datetime import timedelta
 from fastapi import APIRouter, Body, Depends
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
 from typing import Annotated
 
-from database import schemas, get_db
-from database.crud import create_user
-from sqlalchemy.orm import Session
-from services import auth_service
+from src.database import schemas, get_db
+from src.database.crud import create_user
+from src.services import auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -16,7 +16,8 @@ async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db),
 ):
-    user = auth_service.authenticate_user(form_data.username, form_data.password, db)
+    user = auth_service.authenticate_user(
+        form_data.username, form_data.password, db)
 
     access_token_expires = timedelta(days=auth_service.TOKEN_EXPIRATION_DAYS)
     access_token = auth_service.create_access_token(

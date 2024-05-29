@@ -1,17 +1,15 @@
-from typing import Tuple, List, Dict
 import asyncio
+import bisect
 import threading
-import chess
-
+from typing import Dict, List, Tuple, Optional
 from uuid import UUID, uuid4
 
-from services.auth_service import get_current_user
+import chess
+from fastapi import WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
-from fastapi import WebSocket, WebSocketDisconnect
-
-from database import get_db, schemas, crud
-import bisect
+from src.database import crud, get_db, schemas
+from src.services.auth_service import get_current_user
 
 # TODO move ConnectionManager to a separate file
 
@@ -19,10 +17,9 @@ import bisect
 
 # TODO document the code
 
-# TODO new class for commiting the game to the db, and updating the user details(also elo)
 
 class ConnectionManager:
-    connections: Dict[UUID, Tuple[WebSocket, schemas.User]]
+    connections: Dict[UUID, WebSocket]
 
     def __init__(self):
         self.connections = dict()
@@ -33,6 +30,7 @@ class ConnectionManager:
         await websocket.accept()
 
         self.connections[connection_id] = websocket
+
         return connection_id
 
     def disconnect(self, connection_id: UUID) -> None:
@@ -59,7 +57,8 @@ class Matchmaker:
     def __add(self, user: schemas.UserConnection):
         queue = asyncio.Queue()
         bisect.insort(
-            self.waiting_queue, (user, queue), key=lambda o: o[0].details.elo_rating
+            self.waiting_queue, (user,
+                                 queue), key=lambda o: o[0].details.elo_rating
         )
 
         return queue
@@ -71,7 +70,8 @@ class Matchmaker:
                     player_a, queue_a = self.waiting_queue[i]
                     player_b, queue_b = self.waiting_queue[i + 1]
                     if (
-                        abs(player_a.details.elo_rating - player_b.details.elo_rating)
+                        abs(player_a.details.elo_rating -
+                            player_b.details.elo_rating)
                         <= self.MATCHMAKING_RANGE
                     ):
                         self.waiting_queue.pop(i)
@@ -90,16 +90,14 @@ class Matchmaker:
 
 class Game:
     board: chess.Board
-    black: schemas.UserConnection | None = None
-    white: schemas.UserConnection | None = None
-    game_state: schemas.GameState | None = None
-    pushed_move: Tuple[schemas.UserConnection, str] | None = None
-
+    black: Optional[schemas.UserConnection] = None
+    white: Optional[schemas.UserConnection] = None
+    game_state: Optional[schemas.GameState] = None
+    pushed_move: Optional[Tuple[schemas.UserConnection, str]] = None
 
     def __init__(self):
         self.board = chess.Board()
-        self.__update_state()
-
+        self.game_state = schemas.GameState(fen=self.board.fen())
 
         def run_in_new_loop(loop, coro):
             asyncio.set_event_loop(loop)
@@ -118,6 +116,53 @@ class Game:
             self.black = player
         else:
             raise Exception("Game is full")
+
+    def __end_game(self):
+        self.__update_player_data()
+
+        game_model = schemas.Game(
+            white_player_id=self.white.id,
+            black_player_id=self.black.id,
+            white_player=self.white,
+            black_player=self.black,
+            moves=[move.uci() for move in self.board.move_stack],
+            winner=None if self.game_state.winner is None else self.white.id if self.game_state.winner == "W" else self.black.id,)
+
+        if _db_object is not None:
+            game_object = crud.create_game(
+                game_model, _db_object)
+
+    def __update_player_data(self):
+        def expected_score(a, b): return 1 / (1 + 10 ** ((b - a) / 400))
+
+        outcome_w = 1 if self.game_state.winner == "W" \
+            else 0.5 if self.game_state.winner is None \
+            else 0
+
+        outcome_b = 1 - outcome_w
+
+        expected_w = expected_score(
+            self.white.details.elo_rating, self.black.details.elo_rating)
+        expected_b = expected_score(
+            self.black.details.elo_rating, self.white.details.elo_rating)
+
+        new_rating_w = self.white.details.elo_rating + \
+            32 * (outcome_w - expected_w)
+        new_rating_b = self.black.details.elo_rating + \
+            32 * (outcome_b - expected_b)
+
+        self.white.details.elo_rating = int(new_rating_w)
+        self.black.details.elo_rating = int(new_rating_b)
+
+        if self.game_state.winner is None:
+            self.white.details.draws += 1
+            self.black.details.draws += 1
+        elif self.game_state.winner == "W":
+            self.white.details.wins += 1
+            self.black.details.losses += 1
+        else:
+            self.white.details.losses += 1
+            self.black.details.wins += 1
 
     async def engine(self):
         while self.black is None or self.white is None:
@@ -145,7 +190,7 @@ class Game:
                 self.__update_state(last_move=move)
                 self.pushed_move = None
 
-                response = self.__get_response_for_player(self.black, True)
+                response = self.__get_response_for_player(player, True)
                 other_player = self.white if player == self.black else self.black
 
                 await connectionManager.send_json_to(
@@ -158,22 +203,12 @@ class Game:
                     response.model_dump(),
                 )
 
-
         final_state = self.game_state.model_dump()
 
         await connectionManager.send_json_to(self.black.connection_id, final_state)
         await connectionManager.send_json_to(self.white.connection_id, final_state)
 
-        game_model = schemas.Game(
-            white_player=self.white.id,
-            black_player=self.black.id,
-            moves = [move.uci() for move in self.board.move_stack],
-            winner=None if self.game_state.winner is None else self.white.id if self.game_state.winner == "W" else self.black.id,
-        )
-
-        if _db_object is not None:
-            game_object = crud.create_game(game_model, _db_object)
-            print(f"{game_object} created")
+        self.__end_game()
 
     async def push_move(self, player: schemas.UserConnection, move: str):
         if self.__is_valid_move(move) and self.__is_player_turn(player):
@@ -216,14 +251,11 @@ class Game:
             return False
 
     def __update_state(self, last_move: str | None = None):
-        if self.game_state is None:
-            self.game_state = schemas.GameState(fen=self.board.fen())
-
         moves = [move.uci() for move in self.board.legal_moves]
 
         outcome = self.board.outcome()
         if outcome is not None:
-            self.games_state.is_end = True
+            self.game_state.is_end = True
             self.game_state.winner = (
                 "W"
                 if outcome.winner == chess.WHITE
@@ -235,8 +267,8 @@ class Game:
         self.game_state.last_move = last_move
         self.game_state.legal_moves = moves
 
-    async def disconnect(self, player: UUID):
-        if player == self.white:
+    async def disconnect(self, player: schemas.UserConnection):
+        if player is self.white:
             self.game_state.winner = "B"
         else:
             self.game_state.winner = "W"
@@ -300,13 +332,11 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
             while game.get_winner() is None and move is not None:
                 await game.push_move(user_connection, move)
                 move = await websocket.receive_text()
-
-
-        except (WebSocketDisconnect, RuntimeError):
+        except (WebSocketDisconnect, RuntimeError) as e:
             pass
 
         print(f"{connection_id} disconnected")
-        await game.disconnect(connection_id)
+        await game.disconnect(user_connection)
         connectionManager.disconnect(connection_id)
 
 
