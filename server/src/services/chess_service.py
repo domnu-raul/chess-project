@@ -151,8 +151,8 @@ class Game:
         new_rating_b = self.black.details.elo_rating + \
             32 * (outcome_b - expected_b)
 
-        self.white.details.elo_rating = int(new_rating_w)
-        self.black.details.elo_rating = int(new_rating_b)
+        self.white.details.elo_rating = round(new_rating_w)
+        self.black.details.elo_rating = round(new_rating_b)
 
         if self.game_state.winner is None:
             self.white.details.draws += 1
