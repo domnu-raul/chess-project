@@ -25,5 +25,5 @@ async def send_message_to(connection_id: UUID, message: str):
 async def send_json_to( connection_id: UUID, json: dict):
     try:
         await connections[connection_id].send_json(json)
-    except KeyError:
+    except (KeyError, RuntimeError):
         print(f"Connection {connection_id} not found")

@@ -11,6 +11,10 @@ init_db()
 
 app.include_router(auth.router)
 
+@app.get("/")
+async def __index__():
+    return {"message": "Te iubesc ENORM"}
+
 @app.websocket("/play")
 async def __play__(
     websocket: WebSocket,

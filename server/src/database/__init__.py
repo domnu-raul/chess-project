@@ -2,16 +2,16 @@ from fastapi import Request
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
+import os
 
 url = URL.create(
     drivername="postgresql",
-    username="domnuraul",
-    password="1234",
-    host="localhost",
-    database="chessdb",
-    port=5432,
+    username="postgres",
+    password="postgres",
+    host="db",
+    port="5432",
+    database="chess_db"
 )
-
 
 class Base(DeclarativeBase):
     pass
