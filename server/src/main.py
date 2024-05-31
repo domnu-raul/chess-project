@@ -8,16 +8,16 @@ from src.services import chess_service
 from src.database import get_db, init_db
 
 app = FastAPI()
-#origins = ["*"]
+origins = ["*"]
 
-#app.add_middleware(
-#    CORSMiddleware,
-#    allow_origins=origins,
-#    allow_credentials=True,
-#    allow_methods=["*"],
-#    allow_headers=["*"],
-#)
-#
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 init_db()
 
 app.include_router(auth.router)

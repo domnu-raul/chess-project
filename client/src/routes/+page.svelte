@@ -1,7 +1,17 @@
-<script>
-	import ChessGame from '../components/ChessGame/chessGame.svelte';
-	import Header from '../components/Header/header.svelte';
-	import LoginForm from '../components/LoginForm/login.svelte';
+<script lang="ts">
+	import { token } from '$lib/store';
+	import { goto } from '$app/navigation';
+	import { browser } from '$app/environment';
+
+	let token_value;
+	token.subscribe((value) => {
+		token_value = value;
+	});
+
+	if (!token_value && browser) {
+		goto('/login', { replaceState: true });
+	}
 </script>
 
-<LoginForm />
+<slot />
+<h1>{token_value}</h1>
