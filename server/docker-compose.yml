@@ -18,7 +18,7 @@ services:
 
 
   app:
-    image: domnuraul/chess-app:0.9
+    build: .
     depends_on:
       db:
         condition: service_healthy
@@ -26,9 +26,15 @@ services:
       - 8000:8000
     volumes:
       - .:/root
-    command: "uvicorn src.main:app --port=8000 --host=0.0.0.0"
+    command: "uvicorn src.main:app --port=8000 --host=0.0.0.0 --reload"
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: ./src
 
-
+        - action: rebuild
+          path: ./pyproject.toml
 
 volumes:
   postgres_data:

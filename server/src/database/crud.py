@@ -54,6 +54,13 @@ def create_game(game: schemas.Game, db: Session = Depends(get_db)) -> models.Gam
 
     return db_game
 
+def get_user_games(user: schemas.User, db: Session = Depends(get_db)):
+    games = db.query(models.Game).filter(
+        (models.Game.white_player_id == user.id) | (models.Game.black_player_id == user.id)
+    ).all()
+
+    return games
+
 
 @event.listens_for(models.User, "after_insert")
 def __create_user_details(mapper, connection, target):

@@ -1,19 +1,27 @@
 import uvicorn
 from fastapi import Depends, FastAPI, Query, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from src.routers import auth
+from src.routers import auth, user
 from src.services import chess_service
 from src.database import get_db, init_db
 
 app = FastAPI()
+#origins = ["*"]
+
+#app.add_middleware(
+#    CORSMiddleware,
+#    allow_origins=origins,
+#    allow_credentials=True,
+#    allow_methods=["*"],
+#    allow_headers=["*"],
+#)
+#
 init_db()
 
 app.include_router(auth.router)
-
-@app.get("/")
-async def __index__():
-    return {"message": "Te iubesc ENORM"}
+app.include_router(user.router)
 
 @app.websocket("/play")
 async def __play__(
