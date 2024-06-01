@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException, status
-from sqlalchemy import event
+from sqlalchemy import event, or_
 from sqlalchemy.orm import Session
 from src.database import get_db, models, schemas
 
@@ -26,6 +26,15 @@ def get_user_by_id(id: int, db: Session = Depends(get_db)) -> models.User:
 
 
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    email = user.email
+    username = user.username
+
+    if (existing_user := db.query(models.User).filter(or_(models.User.email == email, models.User.username == username)).first()):
+        msg = "Username already in use." if existing_user.username == username else "Email already in use."
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=msg
+        )
+                                                                                                                       
     db_user = models.User(**user.model_dump())
     db.add(db_user)
     db.commit()
