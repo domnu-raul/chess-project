@@ -7,7 +7,6 @@
 	let password = '';
 
 	if (browser) {
-		useFetch('http://localhost:8000/auth/logi');
 		if (localStorage.getItem('token')) goto('/', { replaceState: true });
 	}
 
@@ -32,8 +31,8 @@
 		if (res.ok) {
 			const data = await res.json();
 
-			token.set(`${data['token_type']} ${data['access_token']}`);
-			if (browser) goto('/', { replaceState: true });
+			token.set(data['token_type'] + ' ' + data['access_token']);
+			if (browser) goto('/');
 		}
 	}
 </script>

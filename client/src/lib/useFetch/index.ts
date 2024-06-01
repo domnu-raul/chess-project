@@ -6,9 +6,8 @@ export default async function useFetch(url: string, options?: RequestInit): Prom
 
         const response = await fetch(url, { ...options, headers: { ...options?.headers, 'Authorization': token } });
         if (!response.ok) {
-            localStorage.removeItem('token');
             throw new Error('Failed to fetch');
         }
-        return response.json();
+        return await response.json();
     }
 }

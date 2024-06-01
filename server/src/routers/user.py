@@ -5,7 +5,7 @@ from src.database import crud, get_db
 
 router = APIRouter(prefix="/user", tags=["user"])
 
-@router.get("/details")
+@router.get("/me")
 def get_user_details(user: User = Depends(auth_service.get_current_user)):
 
     return user.model_dump()

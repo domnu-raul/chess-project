@@ -8,8 +8,10 @@
 		token_value = value;
 	});
 
-	if (!token_value && browser) {
-		goto('/login', { replaceState: true });
+	$: if (!$token) {
+		if (browser) {
+			goto('/login', { replaceState: true });
+		}
 	}
 </script>
 
