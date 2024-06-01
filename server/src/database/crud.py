@@ -34,7 +34,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 
-def create_game(game: schemas.Game, db: Session = Depends(get_db)) -> models.Game:
+def create_game(game: schemas.GameCreate, db: Session = Depends(get_db)) -> models.Game:
     db_game = models.Game(
         **game.model_dump(exclude=('id', 'white_player', 'black_player')))
 

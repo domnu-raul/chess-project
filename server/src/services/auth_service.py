@@ -4,7 +4,6 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from passlib.context import CryptContext
-from pydantic import BaseModel
 import jwt
 
 from src.database import schemas, get_db
@@ -17,11 +16,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "ace95846915a3a6776063c7c4dbd41b1a9a036b9103454ed4ffcc9318812a60e"
 ALGORITHM = "HS256"
 TOKEN_EXPIRATION_DAYS = 3
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
 
 
 def get_password_hash(password):

@@ -43,6 +43,17 @@ class User(UserBase):
 class UserConnection(User):
     connection_id: UUID
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenResponse(BaseModel):
+    user: UserBase
+    token: Token
+
+    class Config:
+        from_attributes = True
+
 
 class GameState(BaseModel):
     fen: str
@@ -63,10 +74,12 @@ class Game(BaseModel):
     winner: Optional[int]
     date: datetime = Field(default_factory=datetime.now)
 
-    white_player: User
-    black_player: User
-
     class Config:
         from_attributes = True
         populate_by_name = True
         use_enum_values = True
+
+class GameCreate(Game):
+    white_player: User
+    black_player: User
+

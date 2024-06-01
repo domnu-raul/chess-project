@@ -16,7 +16,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db),
-):
+) -> schemas.TokenResponse:
     user = auth_service.authenticate_user(
         form_data.username, form_data.password, db)
 
@@ -25,7 +25,7 @@ async def login(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
 
-    return auth_service.Token(access_token=access_token, token_type="bearer")
+    return schemas.TokenResponse(user=user, token=schemas.Token(access_token=access_token, token_type="bearer"))
 
 
 @router.post("/register")
@@ -40,5 +40,5 @@ async def register_account(
 async def read_users_me(
     token: str = Depends(auth_service.oauth2_scheme),
     user: schemas.UserBase = Depends(auth_service.get_current_user),
-):
-    return {"token": token, "user:": user}
+) -> schemas.TokenResponse:
+    return schemas.TokenResponse(user=user, token=schemas.Token(access_token=token, token_type="bearer"))

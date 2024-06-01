@@ -155,7 +155,7 @@ class Game:
     def __end_game(self):
         self.__update_player_data()
 
-        game_model = schemas.Game(
+        game_model = schemas.GameCreate(
             white_player_id=self.white.id,
             black_player_id=self.black.id,
             white_player=self.white,
