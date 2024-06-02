@@ -10,6 +10,9 @@ class UserBase(BaseModel):
     )
     email: EmailStr
 
+    class Config:
+        from_attributes = True
+
 
 class UserCreate(UserBase):
     password: str = Field(
@@ -35,10 +38,6 @@ class UserDetails(BaseModel):
 class User(UserBase):
     id: int
     details: UserDetails
-
-    class Config:
-        from_attributes = True
-
 
 class UserConnection(User):
     connection_id: UUID
