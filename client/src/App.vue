@@ -1,34 +1,37 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import {ref, computed} from Vue
-import Home from './routes/Home.vue'
-import Userhome from './routes/Userhome.vue'
-import Chessgame from './routes/Chessgame.vue'
+import { ref, computed } from "vue";
+import Home from "./routes/Home.vue";
+import Userhome from "./routes/Userhome.vue";
+import Chessgame from "./routes/Chessgame.vue";
+import BasePage from "./components/BasePage.vue";
+//import NotFound from './routes/NotFound.vue'
 
 const routes = {
-  "/": Home,
+  "/": {
+    component: Home,
+    layout: "home-layout"
+  },
   "/home": Userhome,
   "/game": Chessgame,
-}
+};
 
-const currentPath = ref.
+const currentPath = ref(window.location.pathname);
 
+window.addEventListener("hashchange", () => {
+  currentPath.value = window.location.pathname;
+});
+
+const currentView = computed(() => {
+  return routes[currentPath.value] || NotFound;
+});
 </script>
 
 <template>
+  <!-- <a href="/home">Home</a>
+  <a href="/game">Game</a> -->
+  <BasePage :layout="currentView.layout">
+    <component :is="currentView.component" />
+  </BasePage>
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>
+<style scoped></style>
