@@ -24,7 +24,9 @@ services:
     ports:
       - 8000:8000
     volumes:
-      - .:/root/server
+      - type: bind
+        source: ./server
+        target: /root
     command: "uvicorn src.main:app --port=8000 --host=0.0.0.0 --reload"
     develop:
       watch:
@@ -42,7 +44,7 @@ services:
     volumes:
       - type: bind
         source: ./client
-        target: /app
+        target: /root
     command: "npm run dev"
 
 volumes:
