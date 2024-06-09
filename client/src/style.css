@@ -5,7 +5,7 @@
 .logo-header {
   @apply font-bold;
   @apply font-robotoslab;
-  @apply text-4xl;
+  @apply text-5xl;
   @apply text-slate-100;
 }
 
