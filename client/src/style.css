@@ -23,7 +23,7 @@
   @apply grid-cols-12;
   @apply w-full;
   @apply h-full;
-  @apply gap-5;
+  @apply gap-4;
 }
 .home-layout {
   grid-template-areas:
