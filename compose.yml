@@ -40,8 +40,10 @@ services:
     ports:
       - 5173:5173
     volumes:
-      - .:/root/client
-    command: "npm run dev -- --host 0.0.0.0"
+      - type: bind
+        source: ./client
+        target: /app
+    command: "npm run dev"
 
 volumes:
   postgres_data:
