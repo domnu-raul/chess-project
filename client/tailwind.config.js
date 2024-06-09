@@ -3,11 +3,11 @@ export default {
   content: [],
   theme: {
     fontFamily: {
-        robotoslab: ['Roboto Slab', 'serif'],
+      robotoslab: ["Roboto Slab", "serif"],
+      roboto: ["Roboto", "sans-serif"],
     },
     extend: {},
   },
   plugins: [],
-  purge: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
-}
-
+  purge: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
+};

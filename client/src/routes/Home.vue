@@ -1,4 +1,6 @@
-<script setup></script>
+<script setup>
+  import Form from '../components/Form/Form.vue';
+</script>
 
 <template>
   <div
@@ -11,12 +13,10 @@
       </h1 class="w-fit mb-12">
       <h1>Join our community!</h1>
   </div>
-
   <div
     style="grid-area: r"
-    class="bg-zinc-900 rounded-2xl"
   >
-
+    <Form/>
   </div>
 </template>
 
