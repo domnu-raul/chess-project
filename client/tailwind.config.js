@@ -6,7 +6,11 @@ export default {
       robotoslab: ["Roboto Slab", "serif"],
       roboto: ["Roboto", "sans-serif"],
     },
-    extend: {},
+    extend: {
+      transitionProperty: {
+        'height': 'height'
+      }
+    },
   },
   plugins: [],
   purge: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
