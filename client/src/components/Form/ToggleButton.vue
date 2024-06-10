@@ -45,7 +45,7 @@ const updateValue = (event) => {
           cy="8"
           r="8"
           stroke-width="3"
-          class="transform transition-transform duration-200 z-10"
+          class="transform transition-transform duration-200"
           :class="[checked ? 'fill-green-600 translate-x-6' : 'fill-slate-600 translate-x-0']"
         />
       </svg>

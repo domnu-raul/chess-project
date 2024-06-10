@@ -6,8 +6,8 @@ import { Transition, watchEffect } from "vue";
 import { ref } from "vue";
 
 let username = ref("");
+let email = ref("");
 let password = ref("");
-let confirmPassword = ref("");
 
 let formSwitch = ref(false);
 let lastFormSwitch = ref(false);
@@ -36,8 +36,8 @@ watchEffect(() => {
 function submitForm() {
   console.log({
     username: username.value,
-    password: password.value,
-    confirmPassword: confirmPassword.value,
+    email: password.value,
+    password: email.value,
   });
 }
 </script>
@@ -59,29 +59,33 @@ function submitForm() {
       name="username"
       v-model="username"
     />
-    <FormInput
-      placeholder="Password"
-      type="password"
-      name="password"
-      v-model="password"
-      class="z-[1]"
-    />
     <TransitionGroup name="slide-fade">
       <FormInput
         v-if="!formSwitch"
-        placeholder="Confirm Password"
+        placeholder="E-mail address"
+        type="email"
+        name="email"
+        v-model="email"
+        class="email-field"
+      />
+      <FormInput
+        placeholder="Password"
         type="password"
-        name="confirm-password"
-        v-model="confirmPassword"
+        name="password"
+        v-model="password"
       />
       <button
         type="submit"
         class="bg-green-700 font-roboto font-black text-3xl text-slate-100 w-full py-4 rounded-lg cursor-default hover:bg-green-800 hover:text-slate-50 select-none"
       >
-        Signup
+        {{ formSwitch ? "Login" : "Sign Up" }}
       </button>
       <div class="flex flex-row justify-between items-center">
-        <p class="font-roboto text-base text-slate-100 cursor-default select-none">Already a member?</p>
+        <p
+          class="font-roboto text-base text-slate-100 cursor-default select-none"
+        >
+          Already a member?
+        </p>
         <ToggleButton v-model="formSwitch" id="is-member-checkbox" />
       </div>
     </TransitionGroup>
@@ -92,11 +96,11 @@ function submitForm() {
 .slide-fade-move,
 .slide-fade-enter-active,
 .slide-fade-leave-active {
-  transition: transform 0.3s ease-in-out, opacity 0.15s ease-out;
+  transition: transform 0.3s ease-in-out, opacity 0.15s ease-in-out;
 }
 
 .slide-fade-leave-from {
-  opacity: 100%;
+  opacity: 25%;
 }
 
 .slide-fade-leave-to {
@@ -126,11 +130,27 @@ function submitForm() {
   }
 }
 
+@keyframes emailEnter {
+  from {
+    transform: translateY(-75%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 .slide-form-in {
   animation: slideFormIn 0.225s ease-in;
 }
 
 .slide-form-out {
   animation: slideFormOut 0.3s ease-in-out;
+}
+
+.email-field {
+  animation: emailEnter 0.29s ease-in-out;
 }
 </style>
