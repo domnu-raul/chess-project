@@ -8,15 +8,19 @@ import { ref } from "vue";
 let username = ref("");
 let password = ref("");
 let confirmPassword = ref("");
+
 let isMember = ref(false);
-// if isMember was false and is now true, slide form in
-// if isMember was true and is now false, slide form out
 let lastIsMember = ref(false);
+
 let slideFormIn = ref(false);
 let slideFormOut = ref(false);
 
 watchEffect(() => {
   if (isMember.value !== lastIsMember.value) {
+    let form = document.getElementById("form");
+    let initialHeight = form.clientHeight;
+    form.style.setProperty("--initial-height", `${initialHeight}px`);
+
     if (isMember.value) {
       slideFormIn.value = true;
       slideFormOut.value = false;
@@ -79,7 +83,7 @@ watchEffect(() => {
 .slide-fade-move,
 .slide-fade-enter-active,
 .slide-fade-leave-active {
-  transition: transform 0.3s ease-in-out, opacity 0.15s ease-out;
+  transition: transform 0.2s ease-in-out, opacity 0.1s ease-out;
 }
 
 .slide-fade-leave-from {
@@ -96,25 +100,25 @@ watchEffect(() => {
 
 @keyframes slideFormIn {
   from {
-    min-height: 95%;
+    min-height: var(--initial-height);
   }
   to {
-    min-height: calc(95% - 4.5rem)
+    min-height: calc(var(--initial-height) - 5.5rem);
   }
 }
 
 @keyframes slideFormOut {
   from {
-    max-height: calc(95% - 4.5rem)
+    max-height: var(--initial-height);
   }
 
   to {
-    max-height: 100%;
+    max-height: calc(var(--initial-height) + 5.5rem);
   }
 }
 
 .slide-form-in {
-  animation: slideFormIn 0.3s ease-in;
+  animation: slideFormIn 0.2s ease-in;
 }
 
 .slide-form-out {
