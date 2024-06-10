@@ -67,12 +67,12 @@ watchEffect(() => {
       />
       <button
         type="submit"
-        class="bg-green-700 font-roboto font-black text-3xl text-slate-100 w-full py-4 rounded-lg cursor-default hover:bg-green-800 hover:text-slate-50"
+        class="bg-green-700 font-roboto font-black text-3xl text-slate-100 w-full py-4 rounded-lg cursor-default hover:bg-green-800 hover:text-slate-50 select-none"
       >
         Signup
       </button>
       <div class="flex flex-row justify-between items-center">
-        <p class="font-roboto text-xl text-slate-100">Already a member?</p>
+        <p class="font-roboto text-base text-slate-100 cursor-default select-none">Already a member?</p>
         <ToggleButton v-model="isMember" id="is-member-checkbox" />
       </div>
     </TransitionGroup>
