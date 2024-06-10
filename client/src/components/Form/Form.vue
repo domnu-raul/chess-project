@@ -118,10 +118,10 @@ watchEffect(() => {
 }
 
 .slide-form-in {
-  animation: slideFormIn 0.2s ease-in;
+  animation: slideFormIn 0.15s ease-in;
 }
 
 .slide-form-out {
-  animation: slideFormOut 0.3s ease-out;
+  animation: slideFormOut 0.2s ease-out;
 }
 </style>

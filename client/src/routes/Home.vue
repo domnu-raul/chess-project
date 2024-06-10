@@ -13,8 +13,10 @@
       </h1 class="w-fit mb-12">
       <h1>Join our community!</h1>
   </div>
+
   <div
     style="grid-area: r"
+    class="flex flex-col justify-center items-center w-fit h-full"
   >
     <Form/>
   </div>
