@@ -83,7 +83,7 @@ watchEffect(() => {
 .slide-fade-move,
 .slide-fade-enter-active,
 .slide-fade-leave-active {
-  transition: transform 0.2s ease-in-out, opacity 0.1s ease-out;
+  transition: transform 0.3s ease-in-out, opacity 0.15s ease-out;
 }
 
 .slide-fade-leave-from {
@@ -118,10 +118,10 @@ watchEffect(() => {
 }
 
 .slide-form-in {
-  animation: slideFormIn 0.15s ease-in;
+  animation: slideFormIn 0.225s ease-in;
 }
 
 .slide-form-out {
-  animation: slideFormOut 0.2s ease-out;
+  animation: slideFormOut 0.3s ease-in-out;
 }
 </style>
