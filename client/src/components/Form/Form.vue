@@ -9,19 +9,19 @@ let username = ref("");
 let password = ref("");
 let confirmPassword = ref("");
 
-let isMember = ref(false);
-let lastIsMember = ref(false);
+let formSwitch = ref(false);
+let lastFormSwitch = ref(false);
 
 let slideFormIn = ref(false);
 let slideFormOut = ref(false);
 
 watchEffect(() => {
-  if (isMember.value !== lastIsMember.value) {
+  if (formSwitch.value !== lastFormSwitch.value) {
     let form = document.getElementById("form");
     let initialHeight = form.clientHeight;
     form.style.setProperty("--initial-height", `${initialHeight}px`);
 
-    if (isMember.value) {
+    if (formSwitch.value) {
       slideFormIn.value = true;
       slideFormOut.value = false;
     } else {
@@ -29,9 +29,17 @@ watchEffect(() => {
       slideFormOut.value = true;
     }
 
-    lastIsMember.value = isMember.value;
+    lastFormSwitch.value = formSwitch.value;
   }
 });
+
+function submitForm() {
+  console.log({
+    username: username.value,
+    password: password.value,
+    confirmPassword: confirmPassword.value,
+  });
+}
 </script>
 
 <template>
@@ -42,6 +50,7 @@ watchEffect(() => {
       { 'slide-form-in': slideFormIn },
       { 'slide-form-out': slideFormOut },
     ]"
+    @submit.prevent="submitForm"
   >
     <FormHeader />
     <FormInput
@@ -59,7 +68,7 @@ watchEffect(() => {
     />
     <TransitionGroup name="slide-fade">
       <FormInput
-        v-if="!isMember"
+        v-if="!formSwitch"
         placeholder="Confirm Password"
         type="password"
         name="confirm-password"
@@ -73,7 +82,7 @@ watchEffect(() => {
       </button>
       <div class="flex flex-row justify-between items-center">
         <p class="font-roboto text-base text-slate-100 cursor-default select-none">Already a member?</p>
-        <ToggleButton v-model="isMember" id="is-member-checkbox" />
+        <ToggleButton v-model="formSwitch" id="is-member-checkbox" />
       </div>
     </TransitionGroup>
   </form>
