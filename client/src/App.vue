@@ -7,31 +7,31 @@ import BasePage from "./components/BasePage.vue";
 //import NotFound from './routes/NotFound.vue'
 
 const routes = {
-  "/": {
-    component: Home,
-    layout: "home-layout"
-  },
-  "/home": Userhome,
-  "/game": Chessgame,
+    "/": {
+        component: Home,
+        layout: "home-layout"
+    },
+    "/home": Userhome,
+    "/game": Chessgame,
 };
 
 const currentPath = ref(window.location.pathname);
 
 window.addEventListener("hashchange", () => {
-  currentPath.value = window.location.pathname;
+    currentPath.value = window.location.pathname;
 });
 
 const currentView = computed(() => {
-  return routes[currentPath.value] || NotFound;
+    return routes[currentPath.value] || NotFound;
 });
 </script>
 
 <template>
-  <!-- <a href="/home">Home</a>
+    <!-- <a href="/home">Home</a>
   <a href="/game">Game</a> -->
-  <BasePage :layout="currentView.layout">
-    <component :is="currentView.component" />
-  </BasePage>
+    <BasePage :layout="currentView.layout">
+        <component :is="currentView.component" />
+    </BasePage>
 </template>
 
 <style scoped></style>
