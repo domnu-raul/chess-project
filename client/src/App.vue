@@ -11,9 +11,13 @@ const routes = {
         component: Home,
         layout: "home-layout"
     },
-    "/home": Userhome,
-    "/game": Chessgame,
-};
+    "/home": {
+        component: Userhome,
+    },
+    "/game" : {
+        component: Chessgame,
+    }
+}
 
 const currentPath = ref(window.location.pathname);
 
