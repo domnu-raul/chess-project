@@ -14,7 +14,7 @@ const routes = {
     "/home": {
         component: Userhome,
     },
-    "/game" : {
+    "/game": {
         component: Chessgame,
     }
 }
