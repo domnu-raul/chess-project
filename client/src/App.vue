@@ -6,6 +6,10 @@ import Chessgame from "./routes/Chessgame.vue";
 import BasePage from "./components/BasePage.vue";
 //import NotFound from './routes/NotFound.vue'
 
+const NotFound = {
+    template: "<div>Not Found</div>"
+};
+
 const routes = {
     "/": {
         component: Home,
