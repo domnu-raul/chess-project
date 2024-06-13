@@ -17,9 +17,11 @@ const routes = {
     },
     "/home": {
         component: Userhome,
+        layout: "left-pane-layout"
     },
     "/game": {
         component: Chessgame,
+        layout: "left-pane-layout"
     }
 }
 

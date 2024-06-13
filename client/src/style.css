@@ -36,3 +36,15 @@
     ". . l l l l l r r r . ."
     ". . . . . . . . . . . .";
 }
+
+.left-pane-layout {
+  grid-template-areas:
+    ". . . . . . . . . . . ."
+    ". . l l l r r r r r . ."
+    ". . l l l r r r r r . ."
+    ". . l l l r r r r r . ."
+    ". . l l l r r r r r . ."
+    ". . l l l r r r r r . ."
+    ". . l l l r r r r r . ."
+    ". . . . . . . . . . . .";
+}
