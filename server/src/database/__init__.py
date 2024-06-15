@@ -7,11 +7,12 @@ import os
 url = URL.create(
     drivername="postgresql",
     username="postgres",
-    password="postgres",
+    password="password",
     host="db",
     port="5432",
     database="chess_db"
 )
+
 
 class Base(DeclarativeBase):
     pass

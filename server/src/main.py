@@ -8,7 +8,7 @@ from src.services import chess_service
 from src.database import get_db, init_db
 
 app = FastAPI()
-origins = ["*"]
+origins = ["http://localhost:5173"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,6 +22,7 @@ init_db()
 
 app.include_router(auth.router)
 app.include_router(user.router)
+
 
 @app.websocket("/play")
 async def __play__(

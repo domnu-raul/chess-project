@@ -1,0 +1,50 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+.logo-header {
+  @apply font-bold;
+  @apply font-robotoslab;
+  @apply text-5xl;
+  @apply text-slate-100;
+}
+
+#base {
+  @apply w-screen;
+  @apply h-screen;
+  @apply bg-zinc-800;
+  @apply flex;
+  @apply flex-col;
+}
+
+#container {
+  @apply grid;
+  @apply grid-rows-8;
+  @apply grid-cols-12;
+  @apply w-full;
+  @apply h-full;
+  @apply gap-4;
+}
+.home-layout {
+  grid-template-areas:
+    ". . . . . . . . . . . ."
+    ". . l l l l l r r r . ."
+    ". . l l l l l r r r . ."
+    ". . l l l l l r r r . ."
+    ". . l l l l l r r r . ."
+    ". . l l l l l r r r . ."
+    ". . l l l l l r r r . ."
+    ". . . . . . . . . . . .";
+}
+
+.left-pane-layout {
+  grid-template-areas:
+    ". . . . . . . . . . . ."
+    ". . l l l r r r r r . ."
+    ". . l l l r r r r r . ."
+    ". . l l l r r r r r . ."
+    ". . l l l r r r r r . ."
+    ". . l l l r r r r r . ."
+    ". . l l l r r r r r . ."
+    ". . . . . . . . . . . .";
+}

@@ -1,5 +1,5 @@
 from datetime import timedelta
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Body, Depends, Response
 from fastapi.security import OAuth2PasswordRequestForm
 
 from sqlalchemy.orm import Session
@@ -14,6 +14,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login")
 async def login(
+    response: Response,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db),
 ) -> schemas.TokenResponse:
@@ -24,6 +25,9 @@ async def login(
     access_token = auth_service.create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
+
+    response.set_cookie(key="access_token", value=access_token, httponly=True,
+                        max_age=auth_service.TOKEN_EXPIRATION_DAYS * 24 * 60 * 60)
 
     return schemas.TokenResponse(user=user, token=schemas.Token(access_token=access_token, token_type="bearer"))
 

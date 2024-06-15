@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta, timezone
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, status, Request
+from fastapi.security import OAuth2PasswordBearer, OAuth2
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from passlib.context import CryptContext
 import jwt
@@ -9,7 +10,22 @@ import jwt
 from src.database import schemas, get_db
 from src.database.crud import get_user_by_username, create_user
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+class OAuth2PasswordBearerWithCookie(OAuth2):
+    def __init__(
+        self,
+        tokenUrl: str,
+        scheme_name: Optional[str] = None,
+        scopes: Optional[dict] = None,
+        auto_error: bool = True,
+    ):
+        super().__init__(scheme_name=scheme_name, auto_error=auto_error)
+
+    async def __call__(self, request: Request) -> Optional[str]:
+        return request.cookies.get("access_token")
+
+
+oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="/auth/login")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
