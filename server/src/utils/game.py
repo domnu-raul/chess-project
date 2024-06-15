@@ -30,6 +30,9 @@ class Game:
             loop.run_until_complete(coro)
             loop.close()
 
+        self.board = chess.Board()
+        self.game_state = schemas.GameState(fen=self.board.fen())
+
         new_loop = asyncio.new_event_loop()
         threading.Thread(
             target=run_in_new_loop, args=(new_loop, self.engine()), daemon=True
@@ -53,26 +56,37 @@ class Game:
         while self.black is None or self.white is None:
             await asyncio.sleep(1)
 
-        self.__init_state()
+        self.__update_state()
 
         await connection_manager.send_json_to(
             self.white.connection_id,
-            self.__get_response_for_player(self.white, True).model_dump()
+            self.__get_game_update_for_player(self.white, True).model_dump()
         )
 
         await connection_manager.send_json_to(
             self.black.connection_id,
-            self.__get_response_for_player(self.black, True).model_dump()
+            self.__get_game_update_for_player(self.black, True).model_dump()
         )
 
         while self.winner is None:
             if (t := self.pushed_message) is not None:
                 player, msg = t
-                await connection_manager.send_message_to(
-                    player.connection_id,
-                    msg
+                other_player = self.white if player == self.black else self.black
+
+                response = schemas.GameResponse(
+                    success=True,
+                    type='CHAT',
+                    content=schemas.ChatUpdate(
+                        sender_id=player.id, message=msg)
                 )
+
+                await connection_manager.send_json_to(
+                    other_player.connection_id,
+                    response.model_dump(),
+                )
+
                 self.pushed_message = None
+
             if (t := self.pushed_move) is not None:
                 player, move = t
                 self.board.push(chess.Move.from_uci(move))
@@ -80,12 +94,13 @@ class Game:
                 self.__update_state(last_move=move)
                 self.pushed_move = None
 
-                response = self.__get_response_for_player(player, True)
                 other_player = self.white if player == self.black else self.black
+                response = self.__get_game_update_for_player(player, True)
+                response_other = self.__get_game_update_for_player(other_player, True)
 
                 await connection_manager.send_json_to(
                     other_player.connection_id,
-                    self.__get_state_for_player(other_player).model_dump(),
+                    response_other.model_dump(),
                 )
 
                 await connection_manager.send_json_to(
@@ -103,6 +118,7 @@ class Game:
     async def push_msg(self, player: schemas.UserConnection, msg: str):
         command, option = msg.split(":", maxsplit=1)
         command = command.strip().upper()
+        option = option.strip()
         match command:
             case "MOVE":
                 await self.__push_move(player, option)
@@ -111,7 +127,7 @@ class Game:
             case "RESIGN":
                 self.game_state.winner = "W" if player == self.black else "B"
             case _:
-                response = self.__get_response_for_player(player, False)
+                response = self.__get_game_update_for_player(player, False)
 
                 await connection_manager.send_json_to(
                     player.connection_id,
@@ -122,7 +138,7 @@ class Game:
         if self.__is_valid_move(move) and self.__is_player_turn(player):
             self.pushed_move = (player, move)
         else:
-            response = self.__get_response_for_player(player, False)
+            response = self.__get_game_update_for_player(player, False)
 
             await connection_manager.send_json_to(
                 player.connection_id,
@@ -132,14 +148,17 @@ class Game:
     async def __push_chat_msg(self, player: schemas.UserConnection, msg: str):
         self.pushed_message = (player, msg)
 
-    def __get_response_for_player(self, player: schemas.UserConnection, success: bool):
+    def __get_game_update_for_player(self, player: schemas.UserConnection, success: bool):
         response = schemas.GameResponse(
-            success=success, **self.__get_state_for_player(player).model_dump(),
-            color="W" if player == self.white else "B",
-            white_player_id=self.white.id,
-            black_player_id=self.black.id
+            success=success,
+            type='GAME_UPDATE',
+            content=schemas.GameUpdate(
+                **self.__get_state_for_player(player).model_dump(),
+                color="W" if player == self.white else "B",
+                white_player_id=self.white.id,
+                black_player_id=self.black.id,
+            )
         )
-
         return response
 
     def __get_state_for_player(self, player: schemas.UserConnection):
@@ -164,11 +183,6 @@ class Game:
         except chess.InvalidMoveError:
             return False
 
-    def __init_state(self):
-        self.board = chess.Board()
-        self.game_state = schemas.GameState(fen=self.board.fen())
-        self.__update_state()
-
     def __update_state(self, last_move: str | None = None):
         moves = [move.uci() for move in self.board.legal_moves]
 
@@ -180,7 +194,7 @@ class Game:
                 else "B" if outcome.winner == chess.BLACK else None
             )
 
-        self.game_state.player_turn = "W" if self.board.turn == chess.WHITE else "B"
+        self.game_state.turn = "W" if self.board.turn == chess.WHITE else "B"
         self.game_state.fen = self.board.fen()
         self.game_state.last_move = last_move
         self.game_state.legal_moves = moves

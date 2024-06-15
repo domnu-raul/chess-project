@@ -39,12 +39,15 @@ class User(UserBase):
     id: int
     details: UserDetails
 
+
 class UserConnection(User):
     connection_id: UUID
+
 
 class Token(BaseModel):
     access_token: str
     token_type: str
+
 
 class TokenResponse(BaseModel):
     user: UserBase
@@ -60,15 +63,23 @@ class GameState(BaseModel):
     last_move: Optional[str] = None
     legal_moves: List[str] = []
     winner: Optional[str] = None
-class GameResponse(GameState):
-    success: bool
+
+
+class GameUpdate(GameState):
     color: str
-    
-    black_player_id:int = None
-    white_player_id:int = None
+    black_player_id: int
+    white_player_id: int
 
 
+class ChatUpdate(BaseModel):
+    sender_id: int
+    message: str
 
+
+class GameResponse(BaseModel):
+    success: bool
+    type: str
+    content: GameUpdate | ChatUpdate
 
 class Game(BaseModel):
     white_player_id: int
@@ -82,7 +93,7 @@ class Game(BaseModel):
         populate_by_name = True
         use_enum_values = True
 
+
 class GameCreate(Game):
     white_player: User
     black_player: User
-

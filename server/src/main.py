@@ -27,7 +27,7 @@ app.include_router(user.router)
 @app.websocket("/play")
 async def __play__(
     websocket: WebSocket,
-    token: str = Query(alias="token"),
+    token: str = Query(...),
     db: Session = Depends(get_db),
 ):
     return await chess_service.join_game(websocket, token, db)
