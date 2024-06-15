@@ -56,14 +56,18 @@ class TokenResponse(BaseModel):
 
 class GameState(BaseModel):
     fen: str
-    player_turn: str = "W"
+    turn: str = "W"
     last_move: Optional[str] = None
     legal_moves: List[str] = []
     winner: Optional[str] = None
-
-
 class GameResponse(GameState):
     success: bool
+    color: str
+    
+    black_player_id:int = None
+    white_player_id:int = None
+
+
 
 
 class Game(BaseModel):

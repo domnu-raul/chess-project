@@ -67,7 +67,7 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
             move, _ = await pending_task
 
             while game.winner is None and move is not None:
-                await game.push_move(user_connection, move)
+                await game.push_msg(user_connection, move)
                 move = await websocket.receive_text()
         except (WebSocketDisconnect, RuntimeError) as e:
             pass

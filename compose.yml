@@ -28,14 +28,6 @@ services:
         source: ./server
         target: /root
     command: "uvicorn src.main:app --port=8000 --host=0.0.0.0 --reload"
-    develop:
-      watch:
-        - action: sync
-          path: ./src
-          target: ./src
-
-        - action: rebuild
-          path: ./pyproject.toml
 
   app-client:
     build: ./client
