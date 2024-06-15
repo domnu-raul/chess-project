@@ -34,12 +34,48 @@ watchEffect(() => {
     }
 });
 
+function login() {
+    fetch("http://localhost:8000/auth/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+            username: username.value,
+            password: password.value,
+        }),
+        credentials: "include",
+    })
+        .then((res) => res.json())
+        .then((data) => console.log(data))
+        .catch((err) => console.error(err));
+}
+
+function signup() {
+
+    fetch("http://localhost:8000/auth/register", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            username: username.value,
+            email: email.value,
+            password: password.value,
+        }),
+        credentials: "include",
+    })
+        .then((res) => res.json())
+        .then((data) => console.log(data))
+        .catch((err) => console.error(err));
+}
+
 function submitForm() {
-    console.log({
-        username: username.value,
-        email: password.value,
-        password: email.value,
-    });
+    if (formSwitch.value) {
+        login();
+    } else {
+        signup();
+    }
 }
 </script>
 
@@ -51,10 +87,10 @@ function submitForm() {
         <FormHeader />
         <FormInput placeholder="Username" type="text" name="username" v-model="username" />
         <TransitionGroup name="slide-fade">
-            <FormInput v-if="!formSwitch" placeholder="E-mail address" type="email" name="email" v-model="email"
+            <FormInput v-if="!formSwitch" placeholder="E-mail address" type="text" name="email" v-model="email"
                 class="email-field" />
             <FormInput placeholder="Password" type="password" name="password" v-model="password" />
-            <Button>{{ formSwitch ? 'Sign Up' : 'Sign In' }}</Button>
+            <Button>{{ formSwitch ? 'Sign In' : 'Sign Up' }}</Button>
             <div class="flex flex-row justify-between items-center">
                 <p class="font-roboto text-base text-slate-100 cursor-default select-none">
                     Already a member?
