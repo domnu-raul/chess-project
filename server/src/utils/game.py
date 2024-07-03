@@ -96,7 +96,8 @@ class Game:
 
                 other_player = self.white if player == self.black else self.black
                 response = self.__get_game_update_for_player(player, True)
-                response_other = self.__get_game_update_for_player(other_player, True)
+                response_other = self.__get_game_update_for_player(
+                    other_player, True)
 
                 await connection_manager.send_json_to(
                     other_player.connection_id,
