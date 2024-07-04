@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-client
+  template:
+    metadata:
+      labels:
+        app: app-client
+    spec:
+      containers:
+      - name: app-client
+        image: domnuraul/chess-app-client:latest
+        ports:
+        - containerPort: 5173
+        command: ["npm", "run", "dev"]
+

@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-server
+  template:
+    metadata:
+      labels:
+        app: app-server
+    spec:
+      containers:
+      - name: app-server
+        image: domnuraul/chess-app-server:latest
+        ports:
+        - containerPort: 8000
+        command: ["uvicorn", "src.main:app", "--port=8000", "--host=0.0.0.0", "--reload"]
+
