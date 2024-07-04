@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import FileResponse
 from typing import List
@@ -35,7 +36,10 @@ def get_user_games(user: User = Depends(auth_service.get_current_user), db=Depen
 
 @router.post("/upload-profile")
 async def upload_profile_picture(file: UploadFile = File(...), user: User = Depends(auth_service.get_current_user), db=Depends(get_db)):
-    file_path = f"public/profiles/{user.id}.png"
+    directory = "public/profiles"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    file_path = f"{directory}/{user.id}.png"
     with open(file_path, "wb") as buffer:
         buffer.write(await file.read())
     return {"file_path": file_path}
