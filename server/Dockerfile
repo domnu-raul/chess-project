@@ -11,6 +11,3 @@ WORKDIR $APP_HOME
 COPY /src $APP_HOME/src
 
 EXPOSE 8000
-
-
-
