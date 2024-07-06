@@ -1,54 +1,58 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import ImageUpload from './ImageUpload.vue';
 
-const user = ref({
-    username: '',
-    elo: 0,
-    gamesPlayed: 0,
-    victories: 0,
-    losses: 0,
-    draws: 0,
-});
 
-function getUser() {
-    fetch('http://localhost:8000/user/me', {
-        method: 'GET',
-        credentials: 'include',
-    })
-        .then((res) => res.json())
-        .then((data) => {
-            user.value.username = data.username;
-            user.value.elo = data.details.elo_rating;
-            user.value.gamesPlayed = data.details.games_played;
-            user.value.victories = data.details.victories;
-            user.value.losses = data.details.losses;
-            user.value.draws = data.details.draws;
-        })
-        .catch((err) => console.error(err));
+const props = defineProps({
+    user: {
+        type: Object,
+        required: true
+    },
+    isSelf: {
+        type: Boolean,
+        required: false,
+        default: false
+    }
+})
 
-    console.log(user.value);
+const imgUrl = ref('http://localhost:8000/user/me/picture');
+
+function updateImgUrl() {
+    imgUrl.value = 'http://localhost:8000/user/me/picture?t=' + new Date().getTime();
 }
 
 onMounted(() => {
-    getUser();
-});
+    updateImgUrl();
+    if (props.isSelf) {
+        imgUrl.value = 'http://localhost:8000/user/me/picture';
+    } else {
+        imgUrl.value = 'http://localhost:8000/user/' + props.user.id + '/picture';
+    }
+})
+
+
 </script>
 
 <template>
     <div class="grid grid-cols-2 bg-sky-600 rounded-lg">
         <div class="flex flex-col p-3 col-start-1 ">
             <h1
-                class="text-3xl my-2 leading-relaxed text-slate-100 font-robotoslab font-bold cursor-default select-none text-wrap ">
-                {{ user.username }}
+                class="text-4xl my-2 leading-relaxed text-slate-100 font-robotoslab font-bold cursor-default select-none text-wrap ">
+                {{ props.user.username }}
             </h1>
-            <img src="http://localhost:8000/user/me/picture" class="w-full rounded-md">
+            <ImageUpload v-if="props.isSelf" :side-effect="updateImgUrl">
+
+                <img :src="imgUrl" class="w-full rounded-md">
+            </ImageUpload>
+            <img v-else :src="imgUrl" class="w-full rounded-md">
+
         </div>
         <div class="flex flex-col p-3 justify-end leading-10 text-slate-100 font-roboto font-medium col-start-2">
-            <p>Elo rating: {{ user.elo }}</p>
-            <p>Games Played: {{ user.gamesPlayed }}</p>
-            <p>Victories: {{ user.victories }}</p>
-            <p>Losses: {{ user.losses }}</p>
-            <p>Draws: {{ user.draws }}</p>
+            <p>Elo rating: {{ props.user.elo }}</p>
+            <p>Games Played: {{ props.user.gamesPlayed }}</p>
+            <p>Victories: {{ props.user.victories }}</p>
+            <p>Losses: {{ props.user.losses }}</p>
+            <p>Draws: {{ props.user.draws }}</p>
         </div>
 
     </div>

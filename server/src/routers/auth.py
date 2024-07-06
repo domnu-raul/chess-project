@@ -32,6 +32,12 @@ async def login(
     return schemas.TokenResponse(user=user, token=schemas.Token(access_token=access_token, token_type="bearer"))
 
 
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie(key="access_token")
+    return {"message": "Logged out"}
+
+
 @router.post("/register")
 async def register_account(
     user_data: Annotated[schemas.UserCreate, Body()],

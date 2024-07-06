@@ -2,13 +2,14 @@
 import FormHeader from "./FormHeader.vue";
 import FormInput from "./FormInput.vue";
 import ToggleButton from "./ToggleButton.vue";
-import { watchEffect } from "vue";
+import { watchEffect, ref, onMounted } from "vue";
 import Button from "../Button.vue";
-import { ref } from "vue";
+import { store } from "../../services/auth";
 
 let username = ref("");
 let email = ref("");
 let password = ref("");
+let errorMsg = ref("");
 
 let formSwitch = ref(false);
 let lastFormSwitch = ref(false);
@@ -34,8 +35,8 @@ watchEffect(() => {
     }
 });
 
-function login() {
-    fetch("http://localhost:8000/auth/login", {
+async function login() {
+    const response = await fetch("http://localhost:8000/auth/login", {
         method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -46,14 +47,16 @@ function login() {
         }),
         credentials: "include",
     })
-        .then((res) => res.json())
-        .then((data) => console.log(data))
-        .catch((err) => console.error(err));
+    const data = await response.json();
+    if (response.status !== 200) {
+        errorMsg.value = data.detail;
+    } else {
+        window.location.href = "/home";
+    }
 }
 
-function signup() {
-
-    fetch("http://localhost:8000/auth/register", {
+async function signup() {
+    const response = await fetch("http://localhost:8000/auth/register", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -64,23 +67,62 @@ function signup() {
             password: password.value,
         }),
         credentials: "include",
-    })
-        .then((res) => res.json())
-        .then((data) => console.log(data))
-        .catch((err) => console.error(err));
-}
+    });
+    const data = await response.json();
 
-function submitForm() {
-    if (formSwitch.value) {
-        login();
-    } else {
-        signup();
+    if (response.status !== 200) {
+        let emailError = undefined;
+        let detailType = undefined;
+        try {
+            emailError = data.detail[0].ctx.reason;
+            detailType = data.detail[0].type;
+        } catch (e) {
+            console.log(e);
+        }
+
+        if (typeof emailError !== "undefined") {
+            errorMsg.value = data.detail[0].ctx.reason;
+            return;
+        }
+
+        if (typeof detailType !== "undefined" && detailType === "string_too_short") {
+            errorMsg.value = "Password must be at least 8 characters long."
+            return;
+        }
+
+        errorMsg.value = data.detail;
+    }
+    else {
+        store.setRegistered(true);
+        formSwitch.value = true;
     }
 }
+
+async function submitForm() {
+    if (!username.value || !password.value) {
+        errorMsg.value = "Please fill in all fields.";
+        return;
+    }
+
+    if (formSwitch.value) {
+        await login();
+    } else {
+        await signup();
+    }
+}
+
+onMounted(() => {
+    store.updateRegisterStatus();
+    if (store.isRegistered) {
+        formSwitch.value = true;
+    };
+    console.log(store.isRegistered)
+});
+
 </script>
 
 <template>
-    <form id="form" class="flex flex-col gap-4 bg-zinc-900 rounded-2xl p-5" :class="[
+    <form id="form" class="flex flex-col gap-4 bg-zinc-900 rounded-2xl p-5 relative" :class="[
         { 'slide-form-in': slideFormIn },
         { 'slide-form-out': slideFormOut },
     ]" @submit.prevent="submitForm">
@@ -90,6 +132,7 @@ function submitForm() {
             <FormInput v-if="!formSwitch" placeholder="E-mail address" type="text" name="email" v-model="email"
                 class="email-field" />
             <FormInput placeholder="Password" type="password" name="password" v-model="password" />
+            <p class="font-roboto text-red-400 max-w-72">{{ errorMsg }}</p>
             <Button>{{ formSwitch ? 'Sign In' : 'Sign Up' }}</Button>
             <div class="flex flex-row justify-between items-center">
                 <p class="font-roboto text-base text-slate-100 cursor-default select-none">
