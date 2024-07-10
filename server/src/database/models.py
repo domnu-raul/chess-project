@@ -34,8 +34,20 @@ class UserDetails(Base):
     games_played = column_property(wins + losses + draws)
 
 
+class GamePlayer(Base):
+    __tablename__ = "game_players"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    game_id: Mapped[int] = mapped_column(
+        ForeignKey("games.game_id"))
+    player_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"))
+    gained_elo: Mapped[int] = mapped_column()
+
+
 class Game(Base):
-    __tablename__ = "game_logs"
+    __tablename__ = "games"
 
     game_id: Mapped[int] = mapped_column(primary_key=True)
     white_player_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -47,4 +59,4 @@ class Game(Base):
     white_player: Mapped["User"] = relationship(
         "User", foreign_keys=[white_player_id])
     black_player: Mapped["User"] = relationship(
-        "User", foreign_keys=[white_player_id])
+        "User", foreign_keys=[black_player_id])

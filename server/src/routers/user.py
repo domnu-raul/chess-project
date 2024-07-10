@@ -41,11 +41,16 @@ def get_user_picture(id: int, db=Depends(get_db)) -> FileResponse:
     return FileResponse(path)
 
 
+@router.get("/games")
+def get_user_games(user: User = Depends(auth_service.get_current_user), db=Depends(get_db)):
+    return crud.get_user_games(user, db)
+
+
+@router.get("/games/{game_id}")
+def get_game_details(game_id: int, db=Depends(get_db)) -> schemas.Game:
+    return crud.get_game_by_id(game_id, db)
+
+
 @router.get("/{user_id}")
 def get_user_details(user_id: int, db=Depends(get_db)) -> schemas.User:
     return crud.get_user_by_id(user_id, db)
-
-
-@router.get("/games")
-def get_user_games(user: User = Depends(auth_service.get_current_user), db=Depends(get_db)) -> List[schemas.Game]:
-    return crud.get_user_games(user, db)

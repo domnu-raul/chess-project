@@ -34,7 +34,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=msg
         )
-                                                                                                                       
+
     db_user = models.User(**user.model_dump())
     db.add(db_user)
     db.commit()
@@ -43,19 +43,9 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 
-def create_game(game: schemas.GameCreate, db: Session = Depends(get_db)) -> models.Game:
+def create_game(game: schemas.Game, db: Session = Depends(get_db)) -> models.Game:
     db_game = models.Game(
         **game.model_dump(exclude=('id', 'white_player', 'black_player')))
-
-    db.query(models.UserDetails).filter(models.UserDetails.id == game.white_player.id).update(
-        game.white_player.details.model_dump(exclude=('games_played',))
-    )
-
-    db.query(models.UserDetails).filter(models.UserDetails.id == game.black_player.id).update(
-        game.black_player.details.model_dump(exclude=('games_played',))
-    )
-
-    db.flush()
 
     db.add(db_game)
     db.commit()
@@ -63,17 +53,63 @@ def create_game(game: schemas.GameCreate, db: Session = Depends(get_db)) -> mode
 
     return db_game
 
+
+def create_game_player(player: schemas.GamePlayer, db: Session = Depends(get_db)):
+    db_player = models.GamePlayer(
+        **player.model_dump()
+    )
+
+    db.add(db_player)
+    db.commit()
+    db.refresh(db_player)
+
+    return db_player
+
+
 def get_user_games(user: schemas.User, db: Session = Depends(get_db)):
     games = db.query(models.Game).filter(
-        (models.Game.white_player_id == user.id) | (models.Game.black_player_id == user.id)
+        (models.Game.white_player_id == user.id) | (
+            models.Game.black_player_id == user.id)
     ).all()
 
-    return games
+    games = [(game, db.query(models.GamePlayer).filter(
+        (models.GamePlayer.player_id == user.id) & (models.GamePlayer.game_id == game.game_id)).first()) for game in games]
+
+    game_views = [schemas.GameView(
+        game_id=game.game_id,
+        opponent=game.white_player if game.black_player_id == user.id else game.black_player,
+        winner=game.winner,
+        date=game.date,
+        elo_gained=game_player.gained_elo
+    ) for game, game_player in games]
+
+    return game_views
 
 
-@event.listens_for(models.User, "after_insert")
+def get_game_by_id(id: int, db: Session = Depends(get_db)):
+    if game := db.query(models.Game).filter(models.Game.game_id == id).first():
+        return game
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Game not found"
+        )
+
+
+@ event.listens_for(models.User, "after_insert")
 def __create_user_details(mapper, connection, target):
     db = Session(bind=connection)
 
     db.add(models.UserDetails(id=target.id))
+    db.commit()
+
+
+@ event.listens_for(models.GamePlayer, "after_insert")
+def __update_user_elo(mapper, connection, target):
+    db = Session(bind=connection)
+
+    player = db.query(models.UserDetails).filter(
+        models.UserDetails.id == target.player_id).first()
+    player.elo_rating += target.gained_elo
+
+    db.flush()
     db.commit()

@@ -81,6 +81,16 @@ class GameResponse(BaseModel):
     type: str
     content: GameUpdate | ChatUpdate
 
+
+class GamePlayer(BaseModel):
+    game_id: Optional[int]
+    player_id: int
+    gained_elo: int
+
+    class Config:
+        from_attributes = True
+
+
 class Game(BaseModel):
     white_player_id: int
     black_player_id: int
@@ -88,12 +98,23 @@ class Game(BaseModel):
     winner: Optional[int]
     date: datetime = Field(default_factory=datetime.now)
 
+    white_player: User
+    black_player: User
+
     class Config:
         from_attributes = True
         populate_by_name = True
         use_enum_values = True
 
 
-class GameCreate(Game):
-    white_player: User
-    black_player: User
+class GameView(BaseModel):
+    game_id: int
+    opponent: User
+    winner: Optional[int]
+    elo_gained: int
+    date: datetime
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
+        use_enum_values = True

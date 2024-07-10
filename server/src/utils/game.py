@@ -2,7 +2,7 @@ import chess
 import asyncio
 import threading
 from typing import Optional, Tuple
-from src.database import schemas
+from src.database import models, schemas
 from sqlalchemy.orm import Session
 
 from src.database import crud
@@ -85,6 +85,11 @@ class Game:
                     response.model_dump(),
                 )
 
+                await connection_manager.send_json_to(
+                    player.connection_id,
+                    response.model_dump(),
+                )
+
                 self.pushed_message = None
 
             if (t := self.pushed_move) is not None:
@@ -109,17 +114,22 @@ class Game:
                     response.model_dump(),
                 )
 
-        final_state = self.game_state.model_dump()
+        final_state_white = self.__get_game_update_for_player(self.white, True)
+        final_state_black = self.__get_game_update_for_player(self.black, True)
+        final_state_white.content.legal_moves = []
+        final_state_black.content.legal_moves = []
 
-        await connection_manager.send_json_to(self.black.connection_id, final_state)
-        await connection_manager.send_json_to(self.white.connection_id, final_state)
+        await connection_manager.send_json_to(self.black.connection_id, final_state_black.model_dump())
+        await connection_manager.send_json_to(self.white.connection_id, final_state_white.model_dump())
 
         self.__end_game()
 
     async def push_msg(self, player: schemas.UserConnection, msg: str):
-        command, option = msg.split(":", maxsplit=1)
-        command = command.strip().upper()
-        option = option.strip()
+        args = msg.split(":", maxsplit=1)
+        command = args[0].strip().upper()
+        option = ""
+        if len(args) > 1:
+            option = args[1].strip()
         match command:
             case "MOVE":
                 await self.__push_move(player, option)
@@ -201,9 +211,8 @@ class Game:
         self.game_state.legal_moves = moves
 
     def __end_game(self):
-        self.__update_player_data()
-
-        game_model = schemas.GameCreate(
+        white_player, black_player = self.__get_game_players()
+        game_model = schemas.Game(
             white_player_id=self.white.id,
             black_player_id=self.black.id,
             white_player=self.white,
@@ -215,12 +224,16 @@ class Game:
             game_object = crud.create_game(
                 game_model, _db_object)
 
-    def __update_player_data(self):
+            white_player.game_id = game_object.game_id
+            black_player.game_id = game_object.game_id
+
+            crud.create_game_player(white_player, _db_object)
+            crud.create_game_player(black_player, _db_object)
+
+    def __get_game_players(self):
         def expected_score(a, b): return 1 / (1 + 10 ** ((b - a) / 400))
 
-        outcome_w = 1 if self.winner == "W" \
-            else 0.5 if self.winner is None \
-            else 0
+        outcome_w = 1 if self.winner == "W" else 0.5 if self.winner is None else 0
 
         outcome_b = 1 - outcome_w
 
@@ -229,20 +242,26 @@ class Game:
         expected_b = expected_score(
             self.black.details.elo_rating, self.white.details.elo_rating)
 
-        new_rating_w = self.white.details.elo_rating + \
-            32 * (outcome_w - expected_w)
-        new_rating_b = self.black.details.elo_rating + \
-            32 * (outcome_b - expected_b)
+        gained_elo_w = 32 * (outcome_w - expected_w)
+        gained_elo_b = 32 * (outcome_b - expected_b)
 
-        self.white.details.elo_rating = round(new_rating_w)
-        self.black.details.elo_rating = round(new_rating_b)
+        self.white.details.elo_rating += gained_elo_w
+        self.black.details.elo_rating += gained_elo_b
 
-        if self.winner is None:
-            self.white.details.draws += 1
-            self.black.details.draws += 1
-        elif self.winner == "W":
+        if self.winner == "W":
             self.white.details.wins += 1
             self.black.details.losses += 1
-        else:
-            self.white.details.losses += 1
+        elif self.winner == "B":
             self.black.details.wins += 1
+            self.white.details.losses += 1
+        else:
+            self.white.details.draws += 1
+            self.black.details.draws += 1
+
+        white_player = schemas.GamePlayer(
+            game_id=None, player_id=self.white.id, gained_elo=gained_elo_w)
+
+        black_player = schemas.GamePlayer(
+            game_id=None, player_id=self.black.id, gained_elo=gained_elo_b)
+
+        return white_player, black_player
