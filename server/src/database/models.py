@@ -45,6 +45,8 @@ class GamePlayer(Base):
         ForeignKey("users.id"))
     gained_elo: Mapped[int] = mapped_column()
 
+    game: Mapped["Game"] = relationship("Game", foreign_keys=[game_id])
+
 
 class Game(Base):
     __tablename__ = "games"

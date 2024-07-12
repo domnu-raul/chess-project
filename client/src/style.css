@@ -25,6 +25,18 @@
   @apply h-full;
   @apply gap-4;
 }
+
+.win-row {
+    @apply bg-green-700;
+}
+
+.draw-row {
+    @apply bg-yellow-700;
+}
+
+.loss-row {
+    @apply bg-red-800;
+}
 .home-layout {
   grid-template-areas:
     ". . . . . . . . . . . ."

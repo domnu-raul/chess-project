@@ -63,6 +63,7 @@ async function setImage() {
     isShowModal.value = false
 }
 
+
 function ready() {
     console.log('Cropper is ready.')
 }
@@ -81,7 +82,7 @@ function reset() {
         <span
             class="absolute w-full h-full bg-slate-800 bg-opacity-0 group-hover:bg-opacity-50 rounded-md pointer-events-none flex flex-row justify-center items-center">
             <svg xmlns="http://www.w3.org/2000/svg" :height="size" viewBox="0 -960 960 960" :width="size" fill="#e2e8f0"
-                class="group-hover:opacity-100 opacity-0">
+                class="group-hover:opacity-100 opacity-0 fill-slate-50">
                 <path
                     d="M240-160q-33 0-56.5-23.5T160-240v-80q0-17 11.5-28.5T200-360q17 0 28.5 11.5T240-320v80h480v-80q0-17 11.5-28.5T760-360q17 0 28.5 11.5T800-320v80q0 33-23.5 56.5T720-160H240Zm200-486-75 75q-12 12-28.5 11.5T308-572q-11-12-11.5-28t11.5-28l144-144q6-6 13-8.5t15-2.5q8 0 15 2.5t13 8.5l144 144q12 12 11.5 28T652-572q-12 12-28.5 12.5T595-571l-75-75v286q0 17-11.5 28.5T480-320q-17 0-28.5-11.5T440-360v-286Z" />
             </svg> </span>
@@ -94,10 +95,10 @@ function reset() {
                 height: 'calc(100vh * 2/3)',
                 backgroundColor: '#f8f8f8',
             }" :img="pic" :options="{
-    viewMode: 1,
-    dragMode: 'crop',
-    aspectRatio: 1,
-}" @ready="ready" />
+                viewMode: 1,
+                dragMode: 'crop',
+                aspectRatio: 1,
+            }" @ready="ready" />
             <div class="flex flex-row w-full gap-5 h-fit self-start">
                 <button @click="setImage" class="bg-green-600 hover:bg-green-700 p-2 rounded-full">
                     <svg xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 -960 960 960" width="48px"

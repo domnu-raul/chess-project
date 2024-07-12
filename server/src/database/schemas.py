@@ -63,6 +63,7 @@ class GameState(BaseModel):
     last_move: Optional[str] = None
     legal_moves: List[str] = []
     winner: Optional[str] = None
+    is_end: bool = False
 
 
 class GameUpdate(GameState):
@@ -111,7 +112,7 @@ class GameView(BaseModel):
     game_id: int
     opponent: User
     winner: Optional[int]
-    elo_gained: int
+    gained_elo: int
     date: datetime
 
     class Config:

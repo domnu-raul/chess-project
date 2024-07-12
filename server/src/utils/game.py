@@ -1,3 +1,4 @@
+from uuid import UUID, uuid4
 import chess
 import asyncio
 import threading
@@ -10,6 +11,7 @@ from src.database import get_db
 from src.utils import connection_manager
 
 _db_object = next(get_db())
+game_map = {}
 
 
 class Game:
@@ -38,6 +40,15 @@ class Game:
             target=run_in_new_loop, args=(new_loop, self.engine()), daemon=True
         ).start()
 
+    def new_hashed() -> UUID:
+        game = Game()
+        game_id = uuid4()
+        game_map[game_id] = game
+        return game_id
+
+    def get_hashed(game_id: UUID) -> "Game":
+        return game_map[game_id]
+
     def join(self, player: schemas.UserConnection):
         if self.white is None:
             self.white = player
@@ -47,6 +58,7 @@ class Game:
             raise Exception("Game is full")
 
     async def disconnect(self, player: schemas.UserConnection):
+        self.game_state.is_end = True
         if player is self.white:
             self.game_state.winner = "B"
         else:
@@ -68,7 +80,7 @@ class Game:
             self.__get_game_update_for_player(self.black, True).model_dump()
         )
 
-        while self.winner is None:
+        while not self.game_state.is_end:
             if (t := self.pushed_message) is not None:
                 player, msg = t
                 other_player = self.white if player == self.black else self.black
@@ -123,6 +135,8 @@ class Game:
         await connection_manager.send_json_to(self.white.connection_id, final_state_white.model_dump())
 
         self.__end_game()
+        await self.disconnect(self.white)
+        await self.disconnect(self.black)
 
     async def push_msg(self, player: schemas.UserConnection, msg: str):
         args = msg.split(":", maxsplit=1)
@@ -136,7 +150,11 @@ class Game:
             case "CHAT":
                 await self.__push_chat_msg(player, option)
             case "RESIGN":
+                self.game_state.is_end = True
                 self.game_state.winner = "W" if player == self.black else "B"
+            case "DRAW":
+                self.game_state.is_end = True
+                self.game_state.winner = None
             case _:
                 response = self.__get_game_update_for_player(player, False)
 
@@ -199,6 +217,7 @@ class Game:
 
         outcome = self.board.outcome()
         if outcome is not None:
+            self.game_state.is_end = True
             self.game_state.winner = (
                 "W"
                 if outcome.winner == chess.WHITE
@@ -227,8 +246,8 @@ class Game:
             white_player.game_id = game_object.game_id
             black_player.game_id = game_object.game_id
 
-            crud.create_game_player(white_player, _db_object)
-            crud.create_game_player(black_player, _db_object)
+            crud.create_game_player(white_player, game_object, _db_object)
+            crud.create_game_player(black_player, game_object, _db_object)
 
     def __get_game_players(self):
         def expected_score(a, b): return 1 / (1 + 10 ** ((b - a) / 400))
@@ -242,21 +261,8 @@ class Game:
         expected_b = expected_score(
             self.black.details.elo_rating, self.white.details.elo_rating)
 
-        gained_elo_w = 32 * (outcome_w - expected_w)
-        gained_elo_b = 32 * (outcome_b - expected_b)
-
-        self.white.details.elo_rating += gained_elo_w
-        self.black.details.elo_rating += gained_elo_b
-
-        if self.winner == "W":
-            self.white.details.wins += 1
-            self.black.details.losses += 1
-        elif self.winner == "B":
-            self.black.details.wins += 1
-            self.white.details.losses += 1
-        else:
-            self.white.details.draws += 1
-            self.black.details.draws += 1
+        gained_elo_w = round(32 * (outcome_w - expected_w))
+        gained_elo_b = round(32 * (outcome_b - expected_b))
 
         white_player = schemas.GamePlayer(
             game_id=None, player_id=self.white.id, gained_elo=gained_elo_w)

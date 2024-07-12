@@ -1,8 +1,9 @@
 import { reactive } from "vue";
 
-export const store = reactive({
+export const auth = reactive({
     isAuthenticated: false,
     isRegistered: false,
+    token: '',
 
     updateAuthStatus() {
         const request = new XMLHttpRequest();
@@ -10,7 +11,10 @@ export const store = reactive({
         request.withCredentials = true;
         request.send(null);
         let status = request.status;
+        let response = JSON.parse(request.responseText);
         this.isAuthenticated = status === 200;
+        if (status === 200) 
+            this.token = response.token.access_token;
     },
 
     updateRegisterStatus() {
@@ -23,7 +27,7 @@ export const store = reactive({
         // Setting a new cookie with a path so it is correctly registered
         document.cookie = cookieValue + "; path=/";
         this.isRegistered = status;
-    }
+    },
 });
 
 

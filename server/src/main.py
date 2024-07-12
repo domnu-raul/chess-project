@@ -24,13 +24,23 @@ app.include_router(auth.router)
 app.include_router(user.router)
 
 
-@app.websocket("/play")
-async def __play__(
+@app.websocket("/matchmaking")
+async def __find_match__(
     websocket: WebSocket,
     token: str = Query(...),
     db: Session = Depends(get_db),
 ):
-    return await chess_service.join_game(websocket, token, db)
+    return await chess_service.find_game(websocket, token, db)
+
+
+@app.websocket("/game/{game_id}")
+async def __play__(
+    game_id: str,
+    websocket: WebSocket,
+    token: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    return await chess_service.join_game(websocket, token, game_id, db)
 
 if __name__ == "__main__":
     uvicorn.run('src.main:app', reload=True)

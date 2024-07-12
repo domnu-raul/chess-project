@@ -54,9 +54,9 @@ def create_game(game: schemas.Game, db: Session = Depends(get_db)) -> models.Gam
     return db_game
 
 
-def create_game_player(player: schemas.GamePlayer, db: Session = Depends(get_db)):
+def create_game_player(player: schemas.GamePlayer, game_object: models.Game, db: Session = Depends(get_db)):
     db_player = models.GamePlayer(
-        **player.model_dump()
+        **player.model_dump(), game=game_object
     )
 
     db.add(db_player)
@@ -80,7 +80,7 @@ def get_user_games(user: schemas.User, db: Session = Depends(get_db)):
         opponent=game.white_player if game.black_player_id == user.id else game.black_player,
         winner=game.winner,
         date=game.date,
-        elo_gained=game_player.gained_elo
+        gained_elo=game_player.gained_elo
     ) for game, game_player in games]
 
     return game_views
@@ -95,7 +95,7 @@ def get_game_by_id(id: int, db: Session = Depends(get_db)):
         )
 
 
-@ event.listens_for(models.User, "after_insert")
+@event.listens_for(models.User, "after_insert")
 def __create_user_details(mapper, connection, target):
     db = Session(bind=connection)
 
@@ -103,12 +103,20 @@ def __create_user_details(mapper, connection, target):
     db.commit()
 
 
-@ event.listens_for(models.GamePlayer, "after_insert")
+@event.listens_for(models.GamePlayer, "after_insert")
 def __update_user_elo(mapper, connection, target):
     db = Session(bind=connection)
 
     player = db.query(models.UserDetails).filter(
         models.UserDetails.id == target.player_id).first()
+
+    if target.game.winner == target.player_id:
+        player.wins += 1
+    elif target.game.winner is None:
+        player.draws += 1
+    else:
+        player.losses += 1
+
     player.elo_rating += target.gained_elo
 
     db.flush()

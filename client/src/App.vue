@@ -5,7 +5,8 @@ import Userhome from "./routes/Userhome.vue";
 import Chessgame from "./routes/Chessgame.vue";
 import BasePage from "./components/BasePage.vue";
 //import NotFound from './routes/NotFound.vue'
-import { store } from './services/auth'
+import { auth } from './services/auth'
+import { game } from './services/game'
 
 const NotFound = {
     template: "<div>Not Found</div>"
@@ -36,11 +37,11 @@ window.addEventListener("hashchange", () => {
 });
 
 const currentView = computed(() => {
-    store.updateAuthStatus();
-    if (!store.isAuthenticated) {
+    auth.updateAuthStatus();
+    if (!auth.isAuthenticated) {
         return routes["/"]
     }
-    if (store.isAuthenticated && currentPath.value == "/") {
+    if (auth.isAuthenticated && currentPath.value == "/") {
         return routes["/home"];
     }
     return routes[currentPath.value] || NotFound;

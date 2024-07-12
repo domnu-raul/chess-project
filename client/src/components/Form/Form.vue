@@ -4,7 +4,7 @@ import FormInput from "./FormInput.vue";
 import ToggleButton from "./ToggleButton.vue";
 import { watchEffect, ref, onMounted } from "vue";
 import Button from "../Button.vue";
-import { store } from "../../services/auth";
+import { auth } from "../../services/auth";
 
 let username = ref("");
 let email = ref("");
@@ -93,7 +93,7 @@ async function signup() {
         errorMsg.value = data.detail;
     }
     else {
-        store.setRegistered(true);
+        auth.setRegistered(true);
         formSwitch.value = true;
     }
 }
@@ -112,11 +112,11 @@ async function submitForm() {
 }
 
 onMounted(() => {
-    store.updateRegisterStatus();
-    if (store.isRegistered) {
+    auth.updateRegisterStatus();
+    if (auth.isRegistered) {
         formSwitch.value = true;
-    };
-    console.log(store.isRegistered)
+    }
+    console.log(auth.isRegistered)
 });
 
 </script>

@@ -1,6 +1,7 @@
 import asyncio
 from typing import Dict, List, Tuple, Optional
 from uuid import UUID, uuid4
+import uuid
 
 from fastapi import WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
@@ -14,7 +15,8 @@ from src.utils import connection_manager, matchmaker
 
 # TODO document the code
 
-async def __check_connection_task(connected : List[bool], websocket : WebSocket) -> Tuple[None | str, bool]:
+
+async def __check_connection_task(connected: List[bool], websocket: WebSocket) -> Tuple[None | str, bool]:
     result = (None, False)
     try:
         while not connected[0]:
@@ -24,10 +26,12 @@ async def __check_connection_task(connected : List[bool], websocket : WebSocket)
     finally:
         return result
 
-async def __find_match_task(user_connection : schemas.UserConnection) -> Tuple[None | Game, bool]:
+
+async def __find_match_task(user_connection: schemas.UserConnection) -> Tuple[None | Game, bool]:
     return await matchmaker.find_game(user_connection), False
 
-async def join_game(websocket: WebSocket, token: str, db: Session):
+
+async def find_game(websocket: WebSocket, token: str, db: Session):
     connection_id = await connection_manager.connect(websocket)
     user = await get_current_user(token, db)
     user_connection = schemas.UserConnection(
@@ -56,22 +60,46 @@ async def join_game(websocket: WebSocket, token: str, db: Session):
 
     if connection_closed:
         print(f"{connection_id} disconnected")
-        connection_manager.disconnect(connection_id)
+        await connection_manager.disconnect(connection_id)
         return
 
-    if type(game := result) is Game:
-        game.join(user_connection)
+    if type(game_id := result) is uuid.UUID:
+        print(f"{connection_id} found a match")
         connected[0] = [True]
 
         try:
-            move, _ = await pending_task
+            await connection_manager.send_json_to(connection_id, {
+                "status": "found",
+                "game_id": str(game_id),
+            })
+            await connection_manager.disconnect(connection_id)
+            _, _ = await pending_task
 
-            while game.winner is None and move is not None:
-                await game.push_msg(user_connection, move)
-                move = await websocket.receive_text()
         except (WebSocketDisconnect, RuntimeError) as e:
             pass
 
         print(f"{connection_id} disconnected")
-        await game.disconnect(user_connection)
-        connection_manager.disconnect(connection_id)
+
+
+async def join_game(websocket: WebSocket, token: str, game_id: str, db: Session):
+    connection_id = await connection_manager.connect(websocket)
+    user = await get_current_user(token, db)
+    user_connection = schemas.UserConnection(
+        connection_id=connection_id, **user.model_dump()
+    )
+
+    game = Game.get_hashed(uuid.UUID(game_id))
+    game.join(user_connection)
+
+    while not game.game_state.is_end:
+        try:
+            msg = await websocket.receive_text()
+            await game.push_msg(user_connection, msg)
+        except WebSocketDisconnect:
+            await game.disconnect(user_connection)
+            print(f"{connection_id} disconnected")
+            return
+
+    await game.disconnect(user_connection)
+    await connection_manager.disconnect(connection_id)
+    print(f"{connection_id} disconnected")
