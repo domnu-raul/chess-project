@@ -19,12 +19,12 @@ onBeforeMount(() => {
 </script>
 
 <template>
-    <div style="grid-area: l;" class="flex flex-col p-5 bg-zinc-900 rounded-2xl justify-between">
+    <div style="grid-area: l;" class="flex flex-col p-5 bg-zinc-900 rounded-2xl justify-between h-auto">
         <UserProfile :user="opponent" :is-self="false" />
         <Button class="text-3xl py-9" :on-click="buttonClick">Play</Button>
         <Button class="text-3xl py-9 bg-zinc-800 hover:bg-slate-800" :on-click="signOut">Sign out</Button>
     </div>
-    <div style="grid-area: r;">
+    <div style="grid-area: r;" class="flex flex-col p-5 bg-zinc-900 rounded-2xl justify-between w-fit h-fit">
         <ChessBoard />
     </div>
 </template>

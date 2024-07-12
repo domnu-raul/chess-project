@@ -22,11 +22,12 @@ export const game = reactive({
             console.log(event);
             this.handleMessage(event);
             this.updateOpponent();
-            connection.setListener(this.handleMessage);
         });
     },
 
     updateOpponent() {
+        if (typeof this.opponent.id !== "undefined")
+            return;
         let meRequest = new XMLHttpRequest();
         meRequest.open("GET", "http://localhost:8000/user/me", false); // `false` makes the request synchronous
         meRequest.withCredentials = true;
@@ -58,4 +59,9 @@ export const game = reactive({
             this.lastMove = message.content.last_move;
         }
     },
+
+    makeMove(move) {
+        let message = `MOVE: ${move}`;
+        connection.sendMessage(message);
+    }
 })

@@ -13,6 +13,10 @@ export const connection = reactive({
         this.socket.onmessage = (event) => action(event);
     },
 
+    sendMessage(message) {
+        this.socket.send(message);
+    },
+
     disconnect() {
         this.socket.close();
         this.isConnected = false;

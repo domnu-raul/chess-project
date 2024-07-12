@@ -35,7 +35,7 @@ function updateImgUrl() {
 </script>
 
 <template>
-    <div class="grid grid-cols-2 bg-sky-600 rounded-lg" :class="[props.isSelf ? 'bg-sky-600' : 'bg-red-700']">
+    <div class="grid grid-cols-2 rounded-lg" :class="[props.isSelf ? 'bg-sky-600' : 'bg-red-700']">
         <div class="flex flex-col p-3 col-start-1 ">
             <h1
                 class="text-3xl leading-relaxed text-slate-100 font-robotoslab font-bold cursor-default select-none text-wrap ">
