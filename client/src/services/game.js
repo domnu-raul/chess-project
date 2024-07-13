@@ -92,5 +92,9 @@ export const game = reactive({
     sendChatMessage(message) {
         let chatMessage = `CHAT: ${message}`;
         connection.sendMessage(chatMessage);
+    },
+
+    resign() {
+        connection.sendMessage("resign");
     }
 })

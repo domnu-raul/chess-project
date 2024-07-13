@@ -152,9 +152,12 @@ class Game:
             case "RESIGN":
                 self.game_state.is_end = True
                 self.game_state.winner = "W" if player == self.black else "B"
-            case "DRAW":
-                self.game_state.is_end = True
-                self.game_state.winner = None
+                response = self.__get_game_update_for_player(player, False)
+
+                await connection_manager.send_json_to(
+                    player.connection_id,
+                    response.model_dump(),
+                )
             case _:
                 response = self.__get_game_update_for_player(player, False)
 

@@ -8,6 +8,11 @@ const messages = computed(() => {
 const currentMessage = ref('');
 
 function sendMessage() {
+    if (currentMessage.value === '/resign') {
+        game.resign();
+        currentMessage.value = '';
+        return;
+    }
     game.sendChatMessage(currentMessage.value);
     currentMessage.value = '';
 }
