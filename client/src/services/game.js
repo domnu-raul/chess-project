@@ -36,6 +36,9 @@ export const game = reactive({
             this.handleMessage(event);
             this.updatePlayers();
         });
+        connection.setOnClose(() => {
+            window.location.href = "/home";
+        });
     },
 
     updatePlayers() {

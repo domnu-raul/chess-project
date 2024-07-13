@@ -99,8 +99,8 @@ onMounted(() => {
 <template>
     <div style="grid-area: l;" class="flex flex-col p-5 bg-zinc-900 rounded-2xl justify-between">
         <UserProfile :user="user" :is-self="true" />
-        <Button class="text-3xl py-10" :on-click="buttonClick">{{ playButtonMsg }}</Button>
-        <Button class="text-3xl py-10 bg-zinc-800 hover:bg-slate-800" :on-click="signOut">Sign out</Button>
+        <Button class="text-3xl py-12" :on-click="buttonClick">{{ playButtonMsg }}</Button>
+        <Button class="text-3xl py-12 bg-zinc-800 hover:bg-slate-800" :on-click="signOut">Sign out</Button>
     </div>
     <div style="grid-area: r;">
         <GameHistory :data="history" />

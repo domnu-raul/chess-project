@@ -95,6 +95,8 @@ async def join_game(websocket: WebSocket, token: str, game_id: str, db: Session)
         try:
             msg = await websocket.receive_text()
             await game.push_msg(user_connection, msg)
+            if (msg.upper() == "RESIGN"):
+                await websocket.receive_text()
         except WebSocketDisconnect:
             await game.disconnect(user_connection)
             print(f"{connection_id} disconnected")

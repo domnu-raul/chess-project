@@ -36,6 +36,6 @@ onUpdated(() => {
         <input type="text" v-model="currentMessage"
             class=" w-full pr-14 bg-zinc-800 px-3 py-1 rounded-lg placeholder:text-gray-400 placeholder:font-roboto placeholder:text-xl caret-slate-100 text-slate-100 text-xl font-roboto text-md"
             placeholder="Type a message...">
+        <p class="font-roboto text-sm text-zinc-500 h-1 mt-1"><b>Commands:</b> /resign</p>
     </form>
-
 </template>
