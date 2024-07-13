@@ -15,7 +15,7 @@ const props = defineProps({
     }
 })
 
-const random = ref(0);
+const random = ref(Math.random());
 
 const imgUrl = computed(() => {
     let url;
@@ -36,7 +36,7 @@ function updateImgUrl() {
 
 <template>
     <div class="grid grid-cols-2 rounded-lg" :class="[props.isSelf ? 'bg-sky-600' : 'bg-red-700']">
-        <div class="flex flex-col p-3 col-start-1 ">
+        <div class="flex flex-col p-0 px-2 pb-2 col-start-1 ">
             <h1
                 class="text-3xl leading-relaxed text-slate-100 font-robotoslab font-bold cursor-default select-none text-wrap ">
                 {{ props.user.username }}
@@ -45,7 +45,7 @@ function updateImgUrl() {
 
                 <img :src="imgUrl" class="w-full rounded-md">
             </ImageUpload>
-            <img v-else :src="imgUrl" class="w-full rounded-md">
+            <img v-else :src="imgUrl" class="h-full rounded-md">
 
         </div>
         <div class="flex flex-col p-3 justify-end leading-10 text-slate-100 font-roboto font-medium col-start-2">

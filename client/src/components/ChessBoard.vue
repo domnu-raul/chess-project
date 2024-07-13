@@ -67,7 +67,6 @@ const moveTree = computed(() => {
     for (let start of uniqueStarts) {
         tree.set(start, moves.filter((move) => move.slice(0, 2) == start).map((move) => move.slice(2, 4)));
     }
-    console.log(tree);
     return tree;
 });
 

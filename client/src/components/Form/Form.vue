@@ -116,7 +116,6 @@ onMounted(() => {
     if (auth.isRegistered) {
         formSwitch.value = true;
     }
-    console.log(auth.isRegistered)
 });
 
 </script>

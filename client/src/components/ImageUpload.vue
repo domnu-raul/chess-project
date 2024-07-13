@@ -56,7 +56,6 @@ async function setImage() {
     const blob = await cropper.getBlob()
     if (!blob) return
 
-    console.log({ base64, blob })
     result.dataURL = base64
     result.blobURL = URL.createObjectURL(blob)
     uploadImage(blob)

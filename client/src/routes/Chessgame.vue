@@ -2,11 +2,11 @@
 import Button from '../components/Button.vue';
 import UserProfile from '../components/UserProfile.vue';
 import ChessBoard from '../components/ChessBoard.vue';
+import Chat from '../components/Chat.vue';
 import { game } from '../services/game';
 import { onBeforeMount, computed } from 'vue';
 
 const opponent = computed(() => {
-    console.log(game.opponent);
     return game.opponent;
 });
 
@@ -19,10 +19,9 @@ onBeforeMount(() => {
 </script>
 
 <template>
-    <div style="grid-area: l;" class="flex flex-col p-5 bg-zinc-900 rounded-2xl justify-between h-auto">
+    <div style="grid-area: l;" class="flex flex-col p-5 bg-zinc-900 rounded-2xl justify-between w-auto h-full">
         <UserProfile :user="opponent" :is-self="false" />
-        <Button class="text-3xl py-9" :on-click="buttonClick">Play</Button>
-        <Button class="text-3xl py-9 bg-zinc-800 hover:bg-slate-800" :on-click="signOut">Sign out</Button>
+        <Chat />
     </div>
     <div style="grid-area: r;" class="flex flex-col p-5 bg-zinc-900 rounded-2xl justify-between w-fit h-fit">
         <ChessBoard />

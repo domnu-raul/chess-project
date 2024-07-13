@@ -27,8 +27,6 @@ function getUser() {
             user.value.username = data.username;
         })
         .catch((err) => console.error(err));
-
-    console.log(user.value);
 }
 
 function getHistory() {
@@ -101,8 +99,8 @@ onMounted(() => {
 <template>
     <div style="grid-area: l;" class="flex flex-col p-5 bg-zinc-900 rounded-2xl justify-between">
         <UserProfile :user="user" :is-self="true" />
-        <Button class="text-3xl py-9" :on-click="buttonClick">{{ playButtonMsg }}</Button>
-        <Button class="text-3xl py-9 bg-zinc-800 hover:bg-slate-800" :on-click="signOut">Sign out</Button>
+        <Button class="text-3xl py-11" :on-click="buttonClick">{{ playButtonMsg }}</Button>
+        <Button class="text-3xl py-11 bg-zinc-800 hover:bg-slate-800" :on-click="signOut">Sign out</Button>
     </div>
     <div style="grid-area: r;">
         <GameHistory :data="history" />
