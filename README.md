@@ -1,7 +1,7 @@
 # About
 
 A full-stack web application for playing Chess. The main purpose of this personal project was to familiarize myself with full-stack web development by implementing a small set of features required for this purpose. In order to do this, I have used the following technologies: 
-- [PostgreSQL](https://www.postgresql.org/)
+- [PostgreSQL](https://www.postgresql.org/) and [SQLAlchemy](https://www.sqlalchemy.org/)
 - [FastAPI](https://fastapi.tiangolo.com/)
 - The [Chess](https://python-chess.readthedocs.io/en/latest/) library.
 - [VueJS](https://vuejs.org/)
