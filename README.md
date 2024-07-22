@@ -33,3 +33,4 @@ Although I planned to implement all the minimal features for playing Chess, I al
 - Clone the repository.
 - From inside the repository, run the following command:
    `docker compose up --build`
+- Enter `http://localhost:5173` in your browser to access the game.
