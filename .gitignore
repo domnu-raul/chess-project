@@ -1,5 +1,6 @@
 __pycache__/
 pyrightconfig.json
 profiles/
+kube_manifests/
 .zed
 .npm

@@ -83,7 +83,7 @@ def get_user_games(user: schemas.User, db: Session = Depends(get_db)):
         gained_elo=game_player.gained_elo
     ) for game, game_player in games]
 
-    return game_views
+    return game_views[::-1]
 
 
 def get_game_by_id(id: int, db: Session = Depends(get_db)):

@@ -26,7 +26,7 @@ onUpdated(() => {
 
 <template>
     <form @submit.prevent="sendMessage" class="flex flex-col w-full h-full">
-        <div id="chatbox" class="flex flex-col h-[280px] gap-2 overflow-y-auto">
+        <div id="chatbox" class="flex flex-col h-[280px] gap-2 pb-2 overflow-y-auto">
             <div v-for="message in messages" :key="message.id" class="flex flex-col w-full rounded-xl px-2 relative">
                 <p class="font-roboto font-bold text-zinc-100">{{ message.sender }} at {{ message.time }}:</p>
                 <p class="font-roboto text-zinc-100 text-wrap min-w-full hyphens-auto">{{ message.message }}</p>
